@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="View recent donations approved by KBK, with donor names shown only when permission was given.">
+    <title>Donation List — KBK</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body data-page="public">
+    <nav class="navbar"><div class="navbar-container"><a href="index.html" class="navbar-brand"><div class="logo"><img src="photo.png/logo1.png" alt="KBK logo"></div><span class="brand-name">KBK Community Donation Tracking System</span></a><ul class="navbar-menu"></ul></div></nav>
+    <main class="container">
+        <h1 class="section-title">Donation List</h1>
+        <p class="transparency-intro">Browse donations that KBK has reviewed and approved. Donor names appear only when permission to share them was given.</p>
+        <section class="section-block public-donation-list" aria-labelledby="donation-list-heading">
+            <div class="page-header compact"><div><h2 id="donation-list-heading">Recent Approved Donations</h2><p id="publicDonationListDescription">Approved contributions shared by KBK.</p></div></div>
+            <div class="table-wrapper">
+                <table>
+                    <thead><tr><th>Donation ID</th><th>Donor</th><th>Date</th><th>Donation</th><th>Purpose</th><th>Status</th></tr></thead>
+                    <tbody id="publicDonationListBody" aria-live="polite"></tbody>
+                </table>
+            </div>
+        </section>
+        <p class="public-privacy-note">Only approved donations are listed. Donor contact details and private information are not shown. These records are stored in this browser and are not synchronized across devices.</p>
+    </main>
+    <footer class="footer"><p>© 2026 KBK Community Donation Tracking System — Transparency. Accountability. Community.</p></footer>
+    <script src="supabase-config.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

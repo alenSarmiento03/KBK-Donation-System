@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KBK Community Donation Tracking System — Donors</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body data-page="dashboard" data-section="Donor Management">
+    <button class="sidebar-toggle" id="sidebarToggle" type="button" aria-label="Toggle menu" aria-expanded="false"><span></span><span></span><span></span></button>
+    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+    <div class="admin-layout">
+        <aside class="sidebar">
+            <div class="sidebar-brand"><div class="logo"><img src="photo.png/logo1.png" alt="KBK logo"></div><span class="brand-name">KBK Community Donation Tracking System</span></div>
+            <ul class="sidebar-menu">
+                <li><a href="dashboard.html"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 19V5m0 14h16M8 16v-4m4 4V8m4 8v-7"/></svg></span><span>Dashboard</span></a></li>
+                <li><a href="donors.html" class="active"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3 19c0-3 2-5 6-5s6 2 6 5m2-8a3 3 0 1 0 0-6m1 9c2 .5 3 2 3 4"/></svg></span><span>Donor Management</span></a></li>
+                <li><a href="donations.html"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="4" y="6" width="16" height="12" rx="2"/><path d="M8 10h8m-5 4h6"/></svg></span><span>Donation Management</span></a></li>
+                <li><a href="allocations.html"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 6h6v5H4zM14 13h6v5h-6zM10 8h4v7m0 0h-4"/></svg></span><span>Donation Allocation</span></a></li>
+                <li><a href="beneficiaries.html"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3 19c0-3 2-5 6-5s6 2 6 5m2-8a3 3 0 1 0 0-6m1 9c2 .5 3 2 3 4"/></svg></span>                <span>Beneficiaries &amp; Requests</span></a></li>
+                <li><a href="projects.html"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 6h6v5H4zM14 6h6v5h-6zM4 14h6v5H4zM14 14h6v5h-6z"/></svg></span><span>Projects & Activities</span></a></li>
+                <li><a href="distributions.html"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 12h16m-6-6 6 6-6 6M4 6v12"/></svg></span><span>Distributions</span></a></li>
+                <li><a href="expenses.html"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 4h14v16H5zM8 8h8m-8 4h8m-8 4h4"/></svg></span><span>Expenses</span></a></li>
+                <li><a href="reports.html"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 19V5m0 14h15M9 15v-4m4 4V8m4 8v-6"/></svg></span><span>Reports</span></a></li>
+                <li><a href="accounts.html"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3"/><path d="M5 20c0-4 2-6 7-6s7 2 7 6M19 4v4m-2-2h4"/></svg></span><span>Users & Accounts</span></a></li>
+                <li><a href="index.html"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M4 12h16M12 4a12 12 0 0 1 0 16M12 4a12 12 0 0 0 0 16"/></svg></span><span>Public Site</span></a></li>
+                <li><a href="#" id="logoutBtn"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M14 5h5v14h-5M10 12h9M10 12l3-3m-3 3 3 3M5 5h5"/></svg></span><span>Logout</span></a></li>
+            </ul>
+        </aside>
+        <main class="main-content">
+            <section class="section-block donor-section">
+                <div class="page-header compact"><div><h1>Donor Management</h1><p>Manage donor records, searches, and donation history</p></div><button class="btn btn-accent" id="addDonorBtn" type="button">Add Donor</button></div>
+                <div class="donor-toolbar">
+                    <input type="search" id="donorSearch" class="form-control" placeholder="Search donor by name or organization">
+                    <select id="donorStatusFilter" class="form-control"><option value="all">All donor statuses</option><option value="active">Active</option><option value="inactive">Inactive</option></select>
+                </div>
+                <section class="donor-contributions" aria-labelledby="donor-contributions-heading">
+                    <div class="page-header compact">
+                        <div><h2 id="donor-contributions-heading">Who Donated</h2><p>Recent contributors and their latest recorded donation.</p></div>
+                    </div>
+                    <div class="table-wrapper donor-table-wrapper"><table><thead><tr><th>Donor</th><th>Donation Records</th><th>Most Recent Donation</th><th>Date</th><th>Status</th></tr></thead><tbody id="donorContributionsBody"></tbody></table></div>
+                </section>
+                <div class="page-header compact donor-profiles-heading">
+                    <div><h2>Donor Profiles</h2><p>Manage contact details and review each donor’s full contribution history.</p></div>
+                </div>
+                <div class="donor-panel">
+                    <form id="donorForm" class="donor-form">
+                        <input type="hidden" id="donorId" value="">
+                        <div class="form-row">
+                            <div class="form-group"><label for="donorFullName">Donor Name</label><input type="text" id="donorFullName" class="form-control" required></div>
+                            <div class="form-group"><label for="donorType">Donor Type</label><select id="donorType" class="form-control"><option value="Individual">Individual</option><option value="Business">Business</option><option value="Organization">Organization</option></select></div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group"><label for="donorEmail">Email</label><input type="email" id="donorEmail" class="form-control"></div>
+                            <div class="form-group"><label for="donorPhone">Phone</label><input type="tel" id="donorPhone" class="form-control"></div>
+                        </div>
+                        <div class="form-group"><label for="donorOrganization">Organization / Group</label><input type="text" id="donorOrganization" class="form-control" placeholder="Optional"></div>
+                        <div class="form-row">
+                            <div class="form-group"><label for="donorStatus">Status</label><select id="donorStatus" class="form-control"><option value="active">Active</option><option value="inactive">Inactive</option></select></div>
+                            <div class="form-group"><label for="donorLastDonation">Last Donation</label><input type="date" id="donorLastDonation" class="form-control"></div>
+                        </div>
+                        <div class="form-actions"><button type="submit" class="btn btn-primary">Save Donor</button><button type="button" class="btn btn-outline" id="resetDonorForm">Cancel</button></div>
+                    </form>
+                    <aside class="profile-panel"><h2>Donor Profile</h2><div id="donorProfileCard" class="profile-card">Select a donor to review their profile and donation history.</div></aside>
+                </div>
+                <div class="table-wrapper donor-table-wrapper"><table><thead><tr><th>Donor</th><th>Type</th><th>Contact</th><th>Last Donation</th><th>Status</th><th>Actions</th></tr></thead><tbody id="donorTableBody"></tbody></table></div>
+            </section>
+        </main>
+    </div>
+    <script src="supabase-config.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

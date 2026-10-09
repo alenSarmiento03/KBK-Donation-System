@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Contact KBK with questions or feedback.">
+    <title>Contact / Feedback — KBK</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body data-page="public">
+    <nav class="navbar"><div class="navbar-container"><a href="index.html" class="navbar-brand"><div class="logo"><img src="photo.png/logo1.png" alt="KBK logo"></div><span class="brand-name">KBK Community Donation Tracking System</span></a><ul class="navbar-menu"></ul></div></nav>
+    <main class="container">
+        <section class="public-assistance-request" aria-labelledby="contact-heading">
+            <h1 class="section-title" id="contact-heading">Contact / Feedback</h1>
+            <p class="transparency-intro">Send KBK a question or feedback. For urgent matters, contact us directly at <a href="mailto:ryealensarmiento@gmail.com">ryealensarmiento@gmail.com</a>.</p>
+            <p class="request-storage-note">This demo queues messages in this browser only. After submitting, use the email draft link to send your message to KBK. Browser submissions are not synchronized across devices.</p>
+            <form id="publicFeedbackForm" class="public-request-form">
+                <div class="form-row">
+                    <div class="form-group"><label for="feedbackName">Name</label><input class="form-control" id="feedbackName" type="text" maxlength="120" autocomplete="name" required></div>
+                    <div class="form-group"><label for="feedbackContact">Email or phone</label><input class="form-control" id="feedbackContact" type="text" maxlength="160" required></div>
+                </div>
+                <div class="form-group"><label for="feedbackSubject">Subject</label><input class="form-control" id="feedbackSubject" type="text" maxlength="160" required></div>
+                <div class="form-group"><label for="feedbackMessage">Question or feedback</label><textarea class="form-control" id="feedbackMessage" rows="5" maxlength="2000" required></textarea></div>
+                <button class="btn btn-primary" type="submit">Submit Message</button>
+                <a class="btn btn-outline" id="feedbackEmailDraft" hidden>Open email draft to send to KBK</a>
+                <p class="request-form-message" id="feedbackFormMessage" role="status" aria-live="polite"></p>
+            </form>
+        </section>
+    </main>
+    <footer class="footer"><p>© 2026 KBK Community Donation Tracking System — Transparency. Accountability. Community.</p></footer>
+    <script src="supabase-config.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

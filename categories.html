@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Donation Categories — KBK</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body data-page="public">
+    <nav class="navbar"><div class="navbar-container"><a href="index.html" class="navbar-brand"><div class="logo"><img src="photo.png/logo1.png" alt="KBK logo"></div><span class="brand-name">KBK Community Donation Tracking System</span></a><ul class="navbar-menu"><li><a href="index.html">Home</a></li><li><a href="categories.html" class="active">Categories</a></li><li><a href="updates.html">Updates</a></li><li><a href="about.html">About KBK</a></li></ul></div></nav>
+    <main class="container">
+        <div class="section-title"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 6h7l2 2h9v10a2 2 0 0 1-2 2H3V6Z"/></svg></span> Donation Categories</div>
+        <p class="page-intro">Choose a category to learn what your support helps provide.</p>
+        <div class="category-grid">
+            <button type="button" class="category-card" data-category="Fiesta Project" aria-pressed="false"><div class="category-icon"><svg viewBox="0 0 24 24"><path d="M12 21V8m0 0c-3 0-5-2-5-5 3 0 5 2 5 5Zm0 0c3 0 5-2 5-5-3 0-5 2-5 5ZM5 21h14M8 17h8"/></svg></div><div class="category-name">Fiesta Project</div><div class="category-desc">Annual community fiesta celebration funds</div></button>
+            <button type="button" class="category-card" data-category="Feeding Program" aria-pressed="false"><div class="category-icon"><svg viewBox="0 0 24 24"><path d="M4 11h16a8 8 0 0 1-16 0Zm2 0V8m4 3V8m4 3V8m4 3V8M3 20h18"/></svg></div><div class="category-name">Feeding Program</div><div class="category-desc">Food donations for community feeding</div></button>
+            <button type="button" class="category-card" data-category="Education Fund" aria-pressed="false"><div class="category-icon"><svg viewBox="0 0 24 24"><path d="M4 5a3 3 0 0 1 3-2h13v16H7a3 3 0 0 0-3 3V5Zm0 0v17m3-15h9"/></svg></div><div class="category-name">Education Fund</div><div class="category-desc">Scholarships and school supplies</div></button>
+            <button type="button" class="category-card" data-category="Medical Assistance" aria-pressed="false"><div class="category-icon"><svg viewBox="0 0 24 24"><path d="M9 3h6v5h5v6h-5v5H9v-5H4V8h5V3Z"/></svg></div><div class="category-name">Medical Assistance</div><div class="category-desc">Health and medical support for members</div></button>
+            <button type="button" class="category-card" data-category="Hygiene" aria-pressed="false"><div class="category-icon"><svg viewBox="0 0 24 24"><path d="M12 3s-6 7-6 11a6 6 0 0 0 12 0c0-4-6-11-6-11Z"/><path d="M9 15a3 3 0 0 0 3 3"/></svg></div><div class="category-name">Hygiene &amp; Personal Care</div><div class="category-desc">Personal care and hygiene items</div></button>
+            <button type="button" class="category-card" data-category="Other" aria-pressed="false"><div class="category-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v10m-5-5h10"/></svg></div><div class="category-name">Other Community Needs</div><div class="category-desc">Additional items confirmed by KBK</div></button>
+        </div>
+        <div class="section-title" id="needs"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 21s-8-4.8-8-10a4.5 4.5 0 0 1 8-2.7A4.5 4.5 0 0 1 20 11c0 5.2-8 10-8 10Z"/><path d="M8 12h8m-4-4v8"/></svg></span> Current Donation Needs</div>
+        <p class="page-intro">These quantities are updated by KBK from current stock and confirmed requests. Fully supplied items are marked complete.</p>
+        <div class="needs-grid public-needs-list" id="publicCurrentNeeds" aria-live="polite"></div>
+    </main>
+    <script src="supabase-config.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

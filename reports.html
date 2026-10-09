@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KBK Community Donation Tracking System — Reports</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body data-page="dashboard" data-section="Reports">
+    <button class="sidebar-toggle" id="sidebarToggle" type="button" aria-label="Toggle menu" aria-expanded="false"><span></span><span></span><span></span></button><div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+    <div class="admin-layout"><aside class="sidebar">
+        <div class="sidebar-brand"><div class="logo"><img src="photo.png/logo1.png" alt="KBK logo"></div><span class="brand-name">KBK Community Donation Tracking System</span></div>
+        <ul class="sidebar-menu">
+            <li><a href="dashboard.html"><span>Dashboard</span></a></li><li><a href="donors.html"><span>Donor Management</span></a></li><li><a href="donations.html"><span>Donation Management</span></a></li><li><a href="allocations.html"><span>Donation Allocation</span></a></li><li><a href="beneficiaries.html">            <span>Beneficiaries &amp; Requests</span></a></li><li><a href="projects.html"><span>Projects & Activities</span></a></li><li><a href="distributions.html"><span>Distributions</span></a></li><li><a href="expenses.html"><span>Expenses</span></a></li><li><a href="reports.html" class="active"><span>Reports</span></a></li><li><a href="accounts.html"><span>Users & Accounts</span></a></li><li><a href="index.html"><span>Public Site</span></a></li><li><a href="#" id="logoutBtn"><span>Logout</span></a></li>
+        </ul>
+    </aside><main class="main-content">
+        <section class="section-block">
+            <div class="page-header compact"><div><h1>Reports</h1><p>Generate CSV reports for donations, donors, beneficiaries, inventory, distributions, expenses, and projects.</p></div></div>
+            <div class="report-controls">
+                <div class="form-group"><label for="reportType">Report Type</label><select id="reportType" class="form-control">
+                    <option value="donations">Donation Report</option><option value="donors">Donor Report</option><option value="beneficiaries">Beneficiary Report</option><option value="inventory">Inventory Report</option><option value="distributions">Distribution Report</option><option value="expenses">Expense Report</option><option value="projects">Project Report</option><option value="monthly">Monthly Report</option><option value="annual">Annual Report</option>
+                </select></div>
+                <div class="form-group"><label for="reportFrom">From Date (optional)</label><input id="reportFrom" class="form-control" type="date"></div>
+                <div class="form-group"><label for="reportTo">To Date (optional)</label><input id="reportTo" class="form-control" type="date"></div>
+                <div class="report-action"><button id="reportGenerate" class="btn btn-primary" type="button">Generate CSV</button></div>
+            </div>
+            <p id="reportMessage" class="report-message" role="status">Reports download as CSV files that can be opened in spreadsheet software.</p>
+        </section>
+    </main></div><script src="supabase-config.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

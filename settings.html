@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings — KBK Community Donation Tracking System</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body data-page="dashboard" data-section="Settings">
+    <button class="sidebar-toggle" id="sidebarToggle" type="button" aria-label="Toggle menu" aria-expanded="false"><span></span><span></span><span></span></button>
+    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+    <div class="admin-layout">
+        <aside class="sidebar">
+            <div class="sidebar-brand"><div class="logo"><img src="photo.png/logo1.png" alt="KBK logo"></div><span class="brand-name">KBK Community Donation Tracking System</span></div>
+            <ul class="sidebar-menu"></ul>
+        </aside>
+        <main class="main-content">
+            <div class="page-header"><div><h1>System Settings</h1><p>Review your session, data scope, and system configuration.</p></div></div>
+            <section class="section-block">
+                <div class="page-header compact"><div><h2>Current Session</h2><p>Signed-in account for this browser session.</p></div></div>
+                <div class="settings-summary-grid">
+                    <article class="mini-stat"><span>Signed-in User</span><strong id="settingsUsername">—</strong></article>
+                    <article class="mini-stat accent"><span>Access Role</span><strong id="settingsRole">—</strong></article>
+                </div>
+            </section>
+            <section class="section-block">
+                <div class="page-header compact"><div><h2>Local Data Overview</h2><p>Records currently available in this browser.</p></div></div>
+                <div class="settings-summary-grid">
+                    <article class="mini-stat"><span>Donation Records</span><strong id="settingsDonationCount">0</strong></article>
+                    <article class="mini-stat accent"><span>Donor Records</span><strong id="settingsDonorCount">0</strong></article>
+                    <article class="mini-stat success"><span>Beneficiary Records</span><strong id="settingsBeneficiaryCount">0</strong></article>
+                    <article class="mini-stat info"><span>Project Records</span><strong id="settingsProjectCount">0</strong></article>
+                </div>
+                <p class="request-storage-note">This prototype stores data in the current browser only. Records are not backed up to a server or synchronized with other devices. Browser storage is not a secure production database.</p>
+            </section>
+            <section class="section-block">
+                <div class="page-header compact"><div><h2>System Configuration</h2><p>Application environment details.</p></div></div>
+                <dl class="settings-detail-list">
+                    <div><dt>Storage mode</dt><dd>Browser local storage</dd></div>
+                    <div><dt>Storage entries in this browser</dt><dd id="settingsStorageCount">0</dd></div>
+                    <div><dt>Account management</dt><dd><a href="accounts.html">Manage users and accounts</a></dd></div>
+                    <div><dt>Public transparency</dt><dd><a href="transparency.html">View the public transparency dashboard</a></dd></div>
+                </dl>
+            </section>
+        </main>
+    </div>
+    <script src="supabase-config.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

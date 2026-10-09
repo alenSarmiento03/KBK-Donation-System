@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventory Management — KBK</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body data-page="dashboard" data-section="Inventory Management">
+    <button class="sidebar-toggle" id="sidebarToggle" type="button" aria-label="Toggle menu" aria-expanded="false"><span></span><span></span><span></span></button>
+    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+    <div class="admin-layout">
+        <aside class="sidebar">
+            <div class="sidebar-brand"><div class="logo"><img src="photo.png/logo1.png" alt="KBK logo"></div><span class="brand-name">KBK Community Donation Tracking System</span></div>
+            <ul class="sidebar-menu"></ul>
+        </aside>
+        <main class="main-content">
+            <section class="section-block">
+                <div class="page-header compact"><div><h1>Inventory Management</h1><p>Track in-kind goods, current stock, and public donation needs.</p></div></div>
+                <p class="request-storage-note">Inventory records are stored in this browser only. Record items received through the donation workflow as needed; this page does not automatically reconcile donation entries.</p>
+                <form id="inventoryForm" class="admin-form-grid">
+                    <div class="form-group"><label for="inventoryName">Item name</label><input id="inventoryName" class="form-control" type="text" maxlength="120" required></div>
+                    <div class="form-group"><label for="inventoryCategory">Category</label><select id="inventoryCategory" class="form-control" required><option value="">Select a category</option><option>Food</option><option>Education</option><option>Hygiene</option><option>Medical</option><option>Other</option></select></div>
+                    <div class="form-group"><label for="inventoryQuantity">Quantity</label><input id="inventoryQuantity" class="form-control" type="number" min="0" step="1" required></div>
+                    <div class="form-group"><label for="inventoryUnit">Unit</label><input id="inventoryUnit" class="form-control" type="text" maxlength="40" placeholder="e.g. packs, boxes" required></div>
+                    <div class="form-group"><label for="inventoryLocation">Storage location (optional)</label><input id="inventoryLocation" class="form-control" type="text" maxlength="120"></div>
+                    <div class="form-group"><label for="inventoryTargetQuantity">Requested quantity (for public needs)</label><input id="inventoryTargetQuantity" class="form-control" type="number" min="1" step="1" placeholder="e.g. 100"></div>
+                    <label class="request-consent inventory-need-toggle"><input id="inventoryPublicNeed" type="checkbox"> Show this item as a current public need</label>
+                    <label class="request-consent inventory-need-toggle"><input id="inventoryUrgent" type="checkbox"> Mark as urgent while quantities are still needed</label>
+                    <div><button class="btn btn-primary" type="submit">Add Inventory Item</button></div>
+                </form>
+                <div class="page-header compact project-list-header"><div><h2>Current Inventory</h2></div></div>
+                <div class="table-wrapper"><table><thead><tr><th>Item</th><th>Category</th><th>Quantity</th><th>Public Need</th><th>Storage Location</th><th>Adjust Stock / Actions</th></tr></thead><tbody id="inventoryTableBody"></tbody></table></div>
+            </section>
+        </main>
+    </div>
+    <script src="supabase-config.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

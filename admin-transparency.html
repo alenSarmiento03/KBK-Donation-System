@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Review KBK's public-facing aggregate transparency figures.">
+    <title>Transparency — KBK Community Donation Tracking System</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body data-page="dashboard" data-section="Transparency">
+    <button class="sidebar-toggle" id="sidebarToggle" type="button" aria-label="Toggle menu" aria-expanded="false"><span></span><span></span><span></span></button>
+    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+    <div class="admin-layout">
+        <aside class="sidebar">
+            <div class="sidebar-brand"><div class="logo"><img src="photo.png/logo1.png" alt="KBK logo"></div><span class="brand-name">KBK Community Donation Tracking System</span></div>
+            <ul class="sidebar-menu"></ul>
+        </aside>
+        <main class="main-content">
+            <div class="page-header"><div><h1>Transparency</h1><p>Preview the aggregate figures displayed to the public.</p></div><a class="btn btn-outline" href="transparency.html">Open Public View</a></div>
+            <section class="section-block">
+                <div class="stats-grid transparency-stats">
+                    <article class="stat-card"><div class="stat-label">Verified Cash Donations</div><div class="stat-value" id="publicTotal">₱0.00</div></article>
+                    <article class="stat-card accent"><div class="stat-label">Allocated</div><div class="stat-value" id="publicAllocated">₱0.00</div></article>
+                    <article class="stat-card success"><div class="stat-label">Verified Expenses</div><div class="stat-value" id="publicUsed">₱0.00</div></article>
+                    <article class="stat-card warning"><div class="stat-label">Beneficiaries Helped</div><div class="stat-value" id="publicHelped">0</div></article>
+                    <article class="stat-card"><div class="stat-label">Active Projects</div><div class="stat-value" id="publicProjects">0</div></article>
+                </div>
+                <div class="transparency-chart" aria-labelledby="funds-chart-heading">
+                    <h2 id="funds-chart-heading">Allocation and use of verified cash donations</h2>
+                    <p class="chart-caption">Bars compare recorded amounts with total verified cash donations.</p>
+                    <div class="transparency-progress"><div class="progress-label"><label for="publicAllocatedProgress">Allocated</label><span id="publicAllocatedPercent">0%</span></div><progress id="publicAllocatedProgress" max="100" value="0">0%</progress></div>
+                    <div class="transparency-progress"><div class="progress-label"><label for="publicUsedProgress">Verified expenses</label><span id="publicUsedPercent">0%</span></div><progress id="publicUsedProgress" max="100" value="0">0%</progress></div>
+                </div>
+                <p class="public-privacy-note">This page previews public aggregate figures. Donor names appear only with explicit recognition consent; contact details and recipient identities are not displayed. Expense totals include verified records only.</p>
+            </section>
+        </main>
+    </div>
+    <script src="supabase-config.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

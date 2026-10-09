@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KBK Community Donation Tracking System — Distributions</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body data-page="dashboard" data-section="Allocation & Distribution">
+    <button class="sidebar-toggle" id="sidebarToggle" type="button" aria-label="Toggle menu" aria-expanded="false"><span></span><span></span><span></span></button><div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+    <div class="admin-layout"><aside class="sidebar">
+        <div class="sidebar-brand"><div class="logo"><img src="photo.png/logo1.png" alt="KBK logo"></div><span class="brand-name">KBK Community Donation Tracking System</span></div>
+        <ul class="sidebar-menu">
+            <li><a href="dashboard.html"><span>Dashboard</span></a></li><li><a href="donors.html"><span>Donor Management</span></a></li><li><a href="donations.html"><span>Donation Management</span></a></li><li><a href="allocations.html"><span>Donation Allocation</span></a></li><li><a href="beneficiaries.html">            <span>Beneficiaries &amp; Requests</span></a></li><li><a href="projects.html"><span>Projects & Activities</span></a></li><li><a href="distributions.html" class="active"><span>Distributions</span></a></li><li><a href="expenses.html"><span>Expenses</span></a></li><li><a href="reports.html"><span>Reports</span></a></li><li><a href="accounts.html"><span>Users & Accounts</span></a></li><li><a href="index.html"><span>Public Site</span></a></li><li><a href="#" id="logoutBtn"><span>Logout</span></a></li>
+        </ul>
+    </aside><main class="main-content">
+        <section class="section-block">
+            <div class="page-header compact"><div><h1>Distribution Management</h1><p>Record which beneficiary received items or funds, when they were delivered, and whether receipt was confirmed.</p></div></div>
+            <form id="distributionForm" class="admin-form-grid">
+                <div class="form-group"><label for="distributionProject">Project</label><select id="distributionProject" data-project-select required class="form-control"><option value="">Select project</option></select></div>
+                <div class="form-group"><label for="distributionBeneficiary">Beneficiary</label><select id="distributionBeneficiary" required class="form-control"><option value="">Select beneficiary</option></select></div>
+                <div class="form-group"><label for="distributionCategory">Public Summary Category</label><select id="distributionCategory" class="form-control" required><option value="">Select a public category</option><option>Food Packs</option><option>School Supplies</option><option>Hygiene Kits</option><option>Medical Assistance</option><option>Cash Assistance</option><option>Other Support</option></select></div>
+                <div class="form-group"><label for="distributionItemAmount">Internal Item / Amount Details</label><input id="distributionItemAmount" class="form-control" type="text" placeholder="e.g. 1,000-peso grocery voucher" required><small class="field-hint">This detail is shown only in the signed-in admin area. Do not enter a recipient's name here.</small></div>
+                <div class="form-group"><label for="distributionQuantity">Quantity</label><input id="distributionQuantity" class="form-control" type="text" placeholder="e.g. 2 packs"></div>
+                <div class="form-group"><label for="distributionDate">Date Distributed</label><input id="distributionDate" class="form-control" type="date" required></div>
+                <div class="form-group"><label for="distributionStatus">Distribution Status</label><select id="distributionStatus" class="form-control"><option>Planned</option><option>Distributed</option><option>Completed</option></select></div>
+                <label class="privacy-option confirmation-option"><input id="distributionConfirmed" type="checkbox"> Recipient confirmed receipt</label>
+                <div><button class="btn btn-primary" type="submit">Record Distribution</button></div>
+            </form>
+            <div class="page-header compact project-list-header"><div><h2>Distribution Records</h2><p><span id="distributionRecordCount">0</span> records</p></div></div>
+            <div class="table-wrapper"><table><thead><tr><th>Distribution ID</th><th>Project</th><th>Beneficiary</th><th>Item / Amount</th><th>Quantity</th><th>Date</th><th>Confirmation</th><th>Status</th></tr></thead><tbody id="distributionTableBody"></tbody></table></div>
+        </section>
+    </main></div><script src="supabase-config.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,30 @@
+# Supabase setup
+
+This project is a static browser app. Supabase provides shared PostgreSQL storage and authentication; the browser must use only the project's publishable/anon key. Never put a service-role or secret key in this app.
+
+## Configure the project
+
+1. Create a Supabase project and copy `supabase-config.example.js` to `supabase-config.js`.
+2. Put the Project URL (for example, `https://YOUR_PROJECT_ID.supabase.co`) and publishable/anon key into `supabase-config.js`. Use the project root URL only; do not add `/rest/v1/`. That local file is ignored by Git.
+3. In Supabase SQL Editor, run `supabase-setup.sql`.
+4. In Authentication, create the first user with the intended administrator email and a strong password. Copy that user's UUID, then run:
+
+   ```sql
+   insert into public.kbk_profiles (user_id, username, role, active)
+   values ('AUTH_USER_UUID', 'admin', 'admin', true);
+   ```
+
+5. Create each additional user in Supabase Authentication, then add their profile with role `staff` or `admin`. Roles are assigned only through trusted Supabase administration, never from the browser.
+6. Host this folder on an HTTP(S) web server and open `login.html`. All HTML pages load the local `supabase-config.js` before `script.js`; make sure it is present on the host. For deployed production use, configure Supabase Auth's allowed redirect URLs for the hosted site.
+
+## Data and privacy
+
+Admin users read shared records; only active admins can write them. Staff profiles are read-only. Unauthenticated public pages call `kbk_public_snapshot()`, which excludes pending/rejected donations, receipts, donor contact details, beneficiary names, and private inventory locations. Donor names are reduced to first name and last initial only when public recognition was explicitly granted.
+
+The legacy browser demo accounts and their plaintext passwords are removed; they are not migrated. On the first authenticated admin visit, old shared-list values are backed up in browser storage under `kbk_legacy_backup_*`, while the remote lists are loaded separately. Use **Import this browser's saved records** on Users & Accounts only after reviewing the backup; importing replaces matching shared lists and may include old sample data. Anonymous assistance and feedback submissions remain browser-local in this version.
+
+Shared data is cached locally and synchronized per record list. Concurrent edits to the same list are protected by revision checks; a conflicting save is reported and must be reviewed/reloaded instead of silently overwriting another administrator's update.
+
+Donation records link to donor profiles by stable donor ID. When migrating older records, the app links only exact donor-name matches with exactly one matching profile; ambiguous and unmatched records remain available by their saved donor name for manual review.
+
+Enable email confirmation if appropriate for the organization. Use a strong unique password for each administrator, and configure Supabase backups/retention for the project's plan.

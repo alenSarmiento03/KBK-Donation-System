@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Donation Request Management — KBK</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body data-page="dashboard" data-section="Donation Request Management">
+    <button class="sidebar-toggle" id="sidebarToggle" type="button" aria-label="Toggle menu" aria-expanded="false"><span></span><span></span><span></span></button>
+    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+    <div class="admin-layout">
+        <aside class="sidebar">
+            <div class="sidebar-brand"><div class="logo"><img src="photo.png/logo1.png" alt="KBK logo"></div><span class="brand-name">KBK Community Donation Tracking System</span></div>
+            <ul class="sidebar-menu"></ul>
+        </aside>
+        <main class="main-content">
+            <section class="section-block">
+                <div class="page-header compact"><div><h1>Assistance Requests</h1><p>Review public assistance requests. Only authorized administrators can approve or decline requests.</p></div></div>
+                <p class="request-storage-note">Requests are stored in this browser only and are not synchronized across devices. Personal details are visible to signed-in administrators on this browser.</p>
+                <div class="table-wrapper"><table><thead><tr><th>Submitted</th><th>Requester</th><th>Contact</th><th>Assistance</th><th>Quantity</th><th>Description / Supporting Information</th><th>Status / Review</th></tr></thead><tbody id="assistanceRequestTableBody"></tbody></table></div>
+            </section>
+            <section class="section-block">
+                <div class="page-header compact"><div><h2>Contact / Feedback Inbox</h2><p>Questions and feedback submitted from the public contact page.</p></div></div>
+                <div class="table-wrapper"><table><thead><tr><th>Submitted</th><th>Name</th><th>Contact</th><th>Subject</th><th>Message</th><th>Actions</th></tr></thead><tbody id="publicFeedbackTableBody"></tbody></table></div>
+            </section>
+        </main>
+    </div>
+    <script src="supabase-config.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

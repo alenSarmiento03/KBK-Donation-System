@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="See KBK's public donation summary, fund allocations, expenses, and community impact.">
+    <title>KBK Community Donation Tracking System</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body data-page="public" class="public-dashboard-page">
+    <div class="public-dashboard-layout">
+    <nav class="navbar public-sidebar" aria-label="Public navigation">
+        <div class="navbar-container">
+            <a href="index.html" class="navbar-brand">
+                <div class="logo"><img src="photo.png/logo1.png" alt="KBK logo"></div>
+                <span class="brand-name">KBK Community Donation Tracking System</span>
+            </a>
+            <ul class="navbar-menu" id="publicSiteMenu">
+                <li><a href="index.html" class="active">Home</a></li>
+                <li><a href="categories.html">Categories</a></li>
+                <li><a href="updates.html">Updates</a></li>
+                <li><a href="about.html">About KBK</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="public-dashboard-content">
+    <header class="public-home-hero hero-minimal">
+        <div class="hero-inner">
+            <div class="hero-badge">KBK COMMUNITY</div>
+            <h1>Small acts, lasting impact.</h1>
+            <p>Transparent donations, current campaigns, and community impact.</p>
+            <div class="public-home-actions">
+                <a class="public-request-link" href="donate.html">How to Donate</a>
+                <a class="public-impact-link" href="transparency.html">Explore Community Progress</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="container public-dashboard-container">
+        <section class="public-summary-section" aria-labelledby="donation-summary-heading">
+            <div class="public-section-heading">
+                <div><h2 class="section-title" id="donation-summary-heading">Our Donations at a Glance</h2><p>Approved donations and the people they help</p></div>
+                <a href="transparency.html">See where donations go</a>
+            </div>
+            <div class="stats-grid public-summary-grid">
+                <article class="stat-card">
+                    <div class="stat-label"><span class="public-stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 7h18v12H3zM3 10h18M7 15h3"/><path d="M7 4h14v3"/></svg></span>Cash Donations</div>
+                    <div class="stat-value" id="publicCashTotal">₱0.00</div>
+                    <div class="stat-sub">Verified cash donations only</div>
+                </article>
+                <article class="stat-card accent">
+                    <div class="stat-label"><span class="public-stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m3 7 9-4 9 4-9 4zM3 7v10l9 4 9-4V7M12 11v10"/></svg></span>Items Donated</div>
+                    <div class="stat-value" id="publicInKind">0</div>
+                    <div class="stat-sub"><span id="publicInKindRecords">0</span> approved item donations</div>
+                </article>
+                <article class="stat-card success">
+                    <div class="stat-label"><span class="public-stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-4 2-6 6-6s6 2 6 6m2-8a3 3 0 1 0 0-6m1 9c2 .5 3 2 3 4"/></svg></span>Donors</div>
+                    <div class="stat-value" id="publicDonors">0</div>
+                    <div class="stat-sub">Unique donors with verified donations</div>
+                </article>
+                <article class="stat-card info">
+                    <div class="stat-label"><span class="public-stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 3h14v18H5zM8 8h8m-8 4h8"/><path d="m8 16 2 2 5-5"/></svg></span>Approved Donations</div>
+                    <div class="stat-value" id="publicVerifiedCount">0</div>
+                    <div class="stat-sub">Donation records approved by KBK</div>
+                </article>
+                <article class="stat-card warning">
+                    <div class="stat-label"><span class="public-stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-4 2-6 6-6s6 2 6 6m2-9 2 2 3-4"/></svg></span>People Helped</div>
+                    <div class="stat-value" id="publicBeneficiaries">0</div>
+                    <div class="stat-sub">People with recorded assistance</div>
+                </article>
+            </div>
+        </section>
+
+        <div class="public-dashboard-columns">
+        <div class="public-dashboard-primary">
+        <section class="public-campaigns" aria-labelledby="campaign-progress-heading">
+            <h2 class="section-title" id="campaign-progress-heading">Current Campaign Progress</h2>
+            <p class="transparency-intro">Progress includes verified cash donations linked to each active campaign.</p>
+            <div class="impact-grid" id="publicCampaignProgress" aria-live="polite"></div>
+            <a class="btn btn-outline" href="public-projects.html?status=active">View Active Campaigns</a>
+        </section>
+        <section class="public-project-transparency" aria-labelledby="where-donations-go-heading">
+            <h2 class="section-title" id="where-donations-go-heading">Where Your Donations Go</h2>
+            <p class="transparency-intro">See verified donations, recorded allocations, and reviewed project expenses separately. A negative remaining balance means verified expenses exceed recorded allocations.</p>
+            <div class="impact-grid" id="publicProjectTransparency" aria-live="polite"></div>
+        </section>
+        <section class="public-transparency" aria-labelledby="transparency-heading">
+            <h2 class="section-title" id="transparency-heading"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M4 12h16M12 4a12 12 0 0 1 0 16"/></svg></span> Transparency Dashboard</h2>
+            <p class="transparency-intro">A clear, aggregate view of donations and how funds are being used.</p>
+            <div class="stats-grid transparency-stats">
+                <article class="stat-card">
+                    <div class="stat-label">Verified Cash Donations</div>
+                    <div class="stat-value" id="publicTotal">₱0.00</div>
+                    <div class="stat-sub">Approved records only</div>
+                </article>
+                <article class="stat-card accent">
+                    <div class="stat-label">Allocated</div>
+                    <div class="stat-value" id="publicAllocated">₱0.00</div>
+                    <div class="stat-sub">Recorded cash allocations</div>
+                </article>
+                <article class="stat-card success">
+                    <div class="stat-label">Verified Expenses</div>
+                    <div class="stat-value" id="publicUsed">₱0.00</div>
+                    <div class="stat-sub">Reviewed expenses only</div>
+                </article>
+                <article class="stat-card warning">
+                    <div class="stat-label">Beneficiaries Helped</div>
+                    <div class="stat-value" id="publicHelped">0</div>
+                    <div class="stat-sub">Unique people with assistance recorded</div>
+                </article>
+                <article class="stat-card">
+                    <div class="stat-label">Active Projects</div>
+                    <div class="stat-value" id="publicProjects">0</div>
+                    <div class="stat-sub">Projects currently marked active</div>
+                </article>
+            </div>
+            <div class="transparency-chart" aria-labelledby="funds-chart-heading">
+                <h3 id="funds-chart-heading">Allocation and use of cash donations</h3>
+                <p class="chart-caption">Bars compare recorded amounts with total cash donations received.</p>
+                <div class="transparency-progress">
+                    <div class="progress-label"><label for="publicAllocatedProgress">Allocated</label><span id="publicAllocatedPercent">0%</span></div>
+                    <progress id="publicAllocatedProgress" max="100" value="0">0%</progress>
+                </div>
+                <div class="transparency-progress">
+                    <div class="progress-label"><label for="publicUsedProgress">Verified expenses</label><span id="publicUsedPercent">0%</span></div>
+                    <progress id="publicUsedProgress" max="100" value="0">0%</progress>
+                </div>
+            </div>
+            <p class="public-privacy-note">Financial summaries include only reviewed, verified expenses. Donor names are shown only with explicit permission, and contact details and recipient identities are never displayed. Cash totals exclude in-kind contributions.</p>
+        </section>
+
+        <section class="public-impact" aria-labelledby="impact-heading">
+            <h2 class="section-title" id="impact-heading">Community Progress & Accomplishments</h2>
+            <p class="transparency-intro">See how project-linked donations connect to recorded distributions and community support.</p>
+            <div class="impact-grid" id="publicImpactCards" aria-live="polite"></div>
+        </section>
+
+        <section class="public-distributions" aria-labelledby="public-distributions-heading">
+            <h2 class="section-title" id="public-distributions-heading">Public Distribution Records</h2>
+            <p class="transparency-intro">Summaries include distributions marked distributed or completed. Personal recipient details are not shown.</p>
+            <div class="public-distribution-grid" id="publicDistributionRecords" aria-live="polite"></div>
+        </section>
+        </div>
+
+        <aside class="public-dashboard-secondary" aria-label="Community information">
+        <section class="public-needs-overview" aria-labelledby="current-needs-heading">
+            <div class="public-section-heading"><div><h2 class="section-title" id="current-needs-heading">Current Needs</h2><p>Items and quantities currently requested by KBK</p></div></div>
+            <div class="public-needs-list" id="publicCurrentNeeds" aria-live="polite"></div>
+            <p class="public-privacy-note">Stock and requested quantities are maintained by KBK. Fully supplied items are clearly marked and are no longer shown as urgent.</p>
+            <a class="public-text-link" href="categories.html">All categories &amp; needs</a>
+        </section>
+        <section class="public-assistance-request" id="assistance-request" aria-labelledby="assistance-request-heading">
+            <h2 class="section-title" id="assistance-request-heading">Request Assistance</h2>
+            <p class="transparency-intro">Submit a request for KBK to review. Approval is not guaranteed; an administrator will assess the information.</p>
+            <p class="request-storage-note">This demo stores requests in this browser only. They are not sent to a server, monitored, or securely synchronized; do not include highly sensitive information. Requests appear in the admin review queue only when an administrator uses this same browser.</p>
+            <form id="publicAssistanceForm" class="public-request-form">
+                <div class="form-row">
+                    <div class="form-group"><label for="requestName">Name</label><input class="form-control" id="requestName" name="name" type="text" maxlength="120" autocomplete="name" required></div>
+                    <div class="form-group"><label for="requestContact">Contact information</label><input class="form-control" id="requestContact" name="contact" type="text" maxlength="160" autocomplete="email" placeholder="Phone number or email" required></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label for="requestType">Type of assistance</label><select class="form-control" id="requestType" name="type" required><option value="">Select a type</option><option>Food</option><option>Education</option><option>Medical</option><option>Emergency</option><option>Other</option></select></div>
+                    <div class="form-group"><label for="requestQuantity">Quantity needed</label><input class="form-control" id="requestQuantity" name="quantity" type="text" maxlength="120" placeholder="e.g. 2 food packs"></div>
+                </div>
+                <div class="form-group"><label for="requestDescription">Description</label><textarea class="form-control" id="requestDescription" name="description" rows="4" maxlength="1500" required></textarea></div>
+                <div class="form-group"><label for="requestSupportingInfo">Supporting information (optional)</label><textarea class="form-control" id="requestSupportingInfo" name="supportingInfo" rows="3" maxlength="1500" placeholder="Share any context that may help KBK review your request. Do not include passwords or financial account details."></textarea></div>
+                <label class="request-consent"><input id="requestConsent" type="checkbox" required> I understand that this request includes personal information for KBK to review and, in this demo, is stored in this browser.</label>
+                <button class="btn btn-primary" type="submit">Submit Request</button>
+                <p class="request-form-message" id="requestFormMessage" role="status" aria-live="polite"></p>
+            </form>
+        </section>
+        </aside>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <p>© 2026 KBK Community Donation Tracking System — Transparency. Accountability. Community.</p>
+    </footer>
+    </div>
+    </div>
+    <button class="public-nav-backdrop" type="button" aria-label="Close navigation" tabindex="-1"></button>
+
+    <script src="supabase-config.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

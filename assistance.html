@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Submit an assistance request for KBK to review.">
+    <title>Request Assistance — KBK</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body data-page="public">
+    <nav class="navbar"><div class="navbar-container"><a href="index.html" class="navbar-brand"><div class="logo"><img src="photo.png/logo1.png" alt="KBK logo"></div><span class="brand-name">KBK Community Donation Tracking System</span></a><ul class="navbar-menu"></ul></div></nav>
+    <main class="container">
+        <section class="public-assistance-request" aria-labelledby="assistance-request-heading">
+            <h1 class="section-title" id="assistance-request-heading">Request Assistance</h1>
+            <p class="transparency-intro">Submit a request for KBK to review. Approval is not guaranteed; an administrator will assess the information.</p>
+            <p class="request-storage-note">This demo stores requests in this browser only. They are not sent to a server, monitored, or synchronized across devices; do not include highly sensitive information. Requests appear in the admin review queue only when an administrator uses this same browser.</p>
+            <form id="publicAssistanceForm" class="public-request-form">
+                <div class="form-row">
+                    <div class="form-group"><label for="requestName">Name</label><input class="form-control" id="requestName" name="name" type="text" maxlength="120" autocomplete="name" required></div>
+                    <div class="form-group"><label for="requestContact">Contact information</label><input class="form-control" id="requestContact" name="contact" type="text" maxlength="160" autocomplete="email" placeholder="Phone number or email" required></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label for="requestType">Type of assistance</label><select class="form-control" id="requestType" name="type" required><option value="">Select a type</option><option>Food</option><option>Education</option><option>Medical</option><option>Emergency</option><option>Other</option></select></div>
+                    <div class="form-group"><label for="requestQuantity">Quantity needed</label><input class="form-control" id="requestQuantity" name="quantity" type="text" maxlength="120" placeholder="e.g. 2 food packs"></div>
+                </div>
+                <div class="form-group"><label for="requestDescription">Description</label><textarea class="form-control" id="requestDescription" name="description" rows="4" maxlength="1500" required></textarea></div>
+                <div class="form-group"><label for="requestSupportingInfo">Supporting information (optional)</label><textarea class="form-control" id="requestSupportingInfo" name="supportingInfo" rows="3" maxlength="1500"></textarea></div>
+                <label class="request-consent"><input id="requestConsent" type="checkbox" required> I understand that this request includes personal information for KBK to review and, in this demo, is stored in this browser.</label>
+                <button class="btn btn-primary" type="submit">Submit Request</button>
+                <p class="request-form-message" id="requestFormMessage" role="status" aria-live="polite"></p>
+            </form>
+        </section>
+    </main>
+    <footer class="footer"><p>© 2026 KBK Community Donation Tracking System — Transparency. Accountability. Community.</p></footer>
+    <script src="supabase-config.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
