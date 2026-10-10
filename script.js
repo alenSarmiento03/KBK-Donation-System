@@ -2009,7 +2009,7 @@ function renderAdminTable(list) {
             : statusFilter !== 'all'
                 ? `No donations currently have the ${escapeHtml(capitalize(statusFilter))} status.`
                 : getUserRole() === 'staff' ? 'No donations available yet.' : 'No donations yet. Click "Add Donation" to create one.';
-        tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:2rem; color: var(--gray);">${emptyMessage}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:2rem; color: var(--gray);">${emptyMessage}</td></tr>`;
         return;
     }
 
@@ -2018,9 +2018,6 @@ function renderAdminTable(list) {
 
     tbody.innerHTML = sorted.map(d => {
         const status = normalizeDonationStatus(d.status);
-        const proof = d.proof && d.proof.dataUrl
-            ? `<a href="${escapeHtml(d.proof.dataUrl)}" download="${escapeHtml(d.proof.name)}" target="_blank" rel="noopener">View receipt</a>`
-            : '—';
         const statusControl = isStaff
             ? `<span class="badge badge-${status === 'received' ? 'pending' : status === 'rejected' ? 'rejected' : 'success'}">${status === 'received' ? 'Pending' : capitalize(status)}</span>${status === 'rejected' && d.rejectionReason ? `<small class="rejection-reason">${escapeHtml(d.rejectionReason)}</small>` : ''}`
             : `<select class="form-control status-select" data-donation-status="${d.id}" aria-label="Status for ${donationReference(d.id)}">${DONATION_STATUSES.map(stage => `<option value="${stage}" ${stage === status ? 'selected' : ''}>${stage === 'received' ? 'Pending' : capitalize(stage)}</option>`).join('')}</select>${status === 'rejected' && d.rejectionReason ? `<small class="rejection-reason">${escapeHtml(d.rejectionReason)}</small>` : ''}`;
@@ -2037,7 +2034,6 @@ function renderAdminTable(list) {
             <td>${formatDate(d.date)}</td>
             <td>${escapeHtml(d.category || '—')}</td>
             <td>${statusControl}</td>
-            <td>${proof}</td>
             <td>${actions}</td>
         </tr>
     `;
@@ -2228,7 +2224,7 @@ function handleAllocationSubmit(event) {
     try {
         saveDonations(donations);
     } catch (storageError) {
-        error.textContent = 'Could not save this allocation in browser storage. Remove unused data or use a smaller receipt file.';
+        error.textContent = 'Could not save this allocation in browser storage. Remove unused data and try again.';
         error.style.display = 'block';
         return;
     }
@@ -2253,7 +2249,6 @@ function openAddModal() {
     document.getElementById('donationCustomUnit').hidden = true;
     populateProjectOptions();
     document.getElementById('donationFormError').style.display = 'none';
-    document.getElementById('existingProof').textContent = '';
     updateTypeFields();
     toggleModal(true);
 }
@@ -2296,12 +2291,7 @@ function openEditModal(id) {
     document.getElementById('rejectionReasonGroup').hidden = normalizeDonationStatus(d.status) !== 'rejected';
     document.getElementById('rejectionReason').required = normalizeDonationStatus(d.status) === 'rejected';
     document.getElementById('donorPublicRecognition').checked = d.publicRecognition === true && d.anonymous !== true;
-    document.getElementById('donationProof').value = '';
     document.getElementById('donationFormError').style.display = 'none';
-    const existingProof = document.getElementById('existingProof');
-    existingProof.innerHTML = d.proof && d.proof.dataUrl
-        ? `Current receipt: <a href="${escapeHtml(d.proof.dataUrl)}" download="${escapeHtml(d.proof.name)}" target="_blank" rel="noopener">${escapeHtml(d.proof.name)}</a>. Choose a file to replace it.`
-        : 'No receipt uploaded.';
     updateTypeFields();
     toggleModal(true);
 }
@@ -2311,17 +2301,8 @@ function toggleModal(show) {
     if (overlay) overlay.classList.toggle('active', show);
 }
 
-function readProofFile(file) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve({ name: file.name, type: file.type, dataUrl: reader.result });
-        reader.onerror = () => reject(new Error('The selected receipt file could not be read.'));
-        reader.readAsDataURL(file);
-    });
-}
-
 /* ---------- FORM SUBMIT ---------- */
-async function handleFormSubmit(e) {
+function handleFormSubmit(e) {
     e.preventDefault();
     if (getUserRole() === 'staff') return;
     const list = getDonations();
@@ -2370,18 +2351,6 @@ async function handleFormSubmit(e) {
         return;
     }
 
-    const proofFile = document.getElementById('donationProof').files[0];
-    if (proofFile && !(proofFile.type === 'application/pdf' || proofFile.type.startsWith('image/'))) {
-        error.textContent = 'Upload a PDF or image file for the donation receipt.';
-        error.style.display = 'block';
-        return;
-    }
-    if (proofFile && proofFile.size > 512 * 1024) {
-        error.textContent = 'Receipt files must be 512 KB or smaller so the donation can be saved in this browser.';
-        error.style.display = 'block';
-        return;
-    }
-
     if (data.type === 'cash' && data.amount <= 0) {
         error.textContent = 'Enter a cash donation amount greater than zero.';
         error.style.display = 'block';
@@ -2394,14 +2363,6 @@ async function handleFormSubmit(e) {
     }
     if (data.type === 'in-kind' && (!Number.isFinite(data.quantity) || data.quantity <= 0 || !data.unit)) {
         error.textContent = 'Enter a quantity greater than zero and select its unit.';
-        error.style.display = 'block';
-        return;
-    }
-
-    try {
-        if (proofFile) data.proof = await readProofFile(proofFile);
-    } catch (fileError) {
-        error.textContent = fileError.message;
         error.style.display = 'block';
         return;
     }
@@ -2433,7 +2394,7 @@ async function handleFormSubmit(e) {
     try {
         saveDonations(list);
     } catch (storageError) {
-        error.textContent = 'The donation could not be saved in browser storage. Try a smaller or no receipt file.';
+        error.textContent = 'The donation could not be saved in browser storage. Remove unused data and try again.';
         error.style.display = 'block';
         return;
     }

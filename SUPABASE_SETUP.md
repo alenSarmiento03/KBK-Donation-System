@@ -25,6 +25,8 @@ The legacy browser demo accounts and their plaintext passwords are removed; they
 
 The assistance form deliberately collects only a contact method, assistance type, and short description (name and quantity are optional). Admins must review and delete resolved requests when no longer needed; no automatic retention or deletion schedule is configured. The anonymous insert policy does not provide bot protection or rate limiting. Before public production use, add server-side abuse prevention (for example, a CAPTCHA verified by a Supabase Edge Function with secrets stored server-side) and define an approved retention schedule. Never expose a service-role key in this static app.
 
+The donation form no longer accepts or displays receipt uploads. Existing receipt data already embedded in older donation records is left untouched; review and approve a separate cleanup before removing any historical records.
+
 Shared data is cached locally and synchronized per record list. Concurrent edits to the same list are protected by revision checks; a conflicting save is reported and must be reviewed/reloaded instead of silently overwriting another administrator's update.
 
 Donation records link to donor profiles by stable donor ID. When migrating older records, the app links only exact donor-name matches with exactly one matching profile; ambiguous and unmatched records remain available by their saved donor name for manual review.
