@@ -393,3 +393,53 @@ create policy "Active KBK admins can delete contact messages"
 
 comment on table public.kbk_public_feedback_messages is
     'Private public-submitted contact messages. Only active KBK admins may read or manage submissions.';
+
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values (
+    'kbk-donation-receipts',
+    'KBK Donation Receipts',
+    false,
+    524288,
+    array['application/pdf', 'image/jpeg', 'image/png', 'image/webp']
+)
+on conflict (id) do update
+set name = excluded.name,
+    public = false,
+    file_size_limit = excluded.file_size_limit,
+    allowed_mime_types = excluded.allowed_mime_types;
+
+drop policy if exists "Active KBK admins can read donation receipts" on storage.objects;
+create policy "Active KBK admins can read donation receipts"
+    on storage.objects for select
+    to authenticated
+    using (
+        bucket_id = 'kbk-donation-receipts'
+        and exists (
+            select 1 from public.kbk_profiles p
+            where p.user_id = (select auth.uid()) and p.active and p.role = 'admin'
+        )
+    );
+
+drop policy if exists "Active KBK admins can upload donation receipts" on storage.objects;
+create policy "Active KBK admins can upload donation receipts"
+    on storage.objects for insert
+    to authenticated
+    with check (
+        bucket_id = 'kbk-donation-receipts'
+        and exists (
+            select 1 from public.kbk_profiles p
+            where p.user_id = (select auth.uid()) and p.active and p.role = 'admin'
+        )
+    );
+
+drop policy if exists "Active KBK admins can delete donation receipts" on storage.objects;
+create policy "Active KBK admins can delete donation receipts"
+    on storage.objects for delete
+    to authenticated
+    using (
+        bucket_id = 'kbk-donation-receipts'
+        and exists (
+            select 1 from public.kbk_profiles p
+            where p.user_id = (select auth.uid()) and p.active and p.role = 'admin'
+        )
+    );

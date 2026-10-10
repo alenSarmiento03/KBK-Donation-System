@@ -14,6 +14,13 @@ const ACCOUNT_KEY = 'kbk_accounts';
 const ACTIVITY_KEY = 'kbk_activity_log';
 const INVENTORY_KEY = 'kbk_inventory';
 const FEEDBACK_KEY = 'kbk_public_feedback';
+const DONATION_RECEIPTS_BUCKET = 'kbk-donation-receipts';
+const DONATION_RECEIPT_TYPES = new Map([
+    ['application/pdf', 'pdf'],
+    ['image/jpeg', 'jpg'],
+    ['image/png', 'png'],
+    ['image/webp', 'webp']
+]);
 const KBK_CONTACT_EMAIL = 'ryealensarmiento@gmail.com';
 const AUTH_KEY = 'kbk_user_logged_in';
 const ROLE_KEY = 'kbk_user_role';
@@ -31,6 +38,7 @@ let publicUniqueDonorCount = null;
 let publicBeneficiariesHelped = null;
 let remoteAssistanceRequests = null;
 let remoteFeedbackMessages = null;
+let donationSaveInProgress = false;
 
 function showSystemStatus(message, isError = false) {
     let status = document.getElementById('kbkSystemStatus');
@@ -479,6 +487,60 @@ function saveDonations(list) {
         return cleanDonation;
     });
     saveStoredList(STORAGE_KEY, cleanedDonations);
+}
+
+async function uploadDonationReceipt(file, donationId) {
+    if (!supabaseClient || getUserRole() !== 'admin') {
+        throw new Error('A signed-in administrator is required to upload donation receipts.');
+    }
+    const extension = DONATION_RECEIPT_TYPES.get(file.type);
+    if (!extension) throw new Error('Choose a PDF, JPEG, PNG, or WebP receipt.');
+    if (file.size <= 0 || file.size > 512 * 1024) {
+        throw new Error('Receipt files must be between 1 byte and 512 KB.');
+    }
+    if (!window.crypto?.randomUUID) {
+        throw new Error('This browser cannot create a secure receipt file name. Use an up-to-date browser and try again.');
+    }
+
+    const path = `${donationId}/${window.crypto.randomUUID()}.${extension}`;
+    const { error } = await supabaseClient.storage
+        .from(DONATION_RECEIPTS_BUCKET)
+        .upload(path, file, { contentType: file.type, upsert: false });
+    if (error) throw new Error(`Unable to upload the receipt: ${error.message}`);
+
+    return {
+        path,
+        name: file.name.replace(/[\\/]/g, '_').slice(0, 120) || `receipt.${extension}`,
+        type: file.type
+    };
+}
+
+async function deleteStoredDonationReceipt(proof) {
+    if (!proof?.path) return;
+    const { error } = await supabaseClient.storage
+        .from(DONATION_RECEIPTS_BUCKET)
+        .remove([proof.path]);
+    if (error) throw new Error(`Unable to remove the previous receipt: ${error.message}`);
+}
+
+async function openDonationReceipt(path) {
+    if (getUserRole() !== 'admin' || !/^\d+\/[0-9a-f-]{36}\.(pdf|jpg|png|webp)$/i.test(path)) {
+        throw new Error('This receipt is not available to this account.');
+    }
+    const receiptWindow = window.open('about:blank', '_blank');
+    if (!receiptWindow) throw new Error('Allow pop-ups for this site, then open the receipt again.');
+    receiptWindow.opener = null;
+
+    try {
+        const { data, error } = await supabaseClient.storage
+            .from(DONATION_RECEIPTS_BUCKET)
+            .createSignedUrl(path, 60, { download: true });
+        if (error) throw new Error(error.message);
+        receiptWindow.location.replace(data.signedUrl);
+    } catch (error) {
+        receiptWindow.close();
+        throw new Error(`Unable to open the private receipt: ${error.message}`);
+    }
 }
 
 function getDonors() {
@@ -1933,7 +1995,81 @@ function renderDashboard() {
 
     renderAdminOverview();
     renderAdminTable(visibleDonations);
+    renderLegacyReceiptMigrationButton();
     renderDonorTable();
+}
+
+function renderLegacyReceiptMigrationButton() {
+    const button = document.getElementById('migrateLegacyReceiptsBtn');
+    if (!button) return;
+    const count = getDonations().filter(donation => donation.proof?.dataUrl && !donation.proof.path).length;
+    button.hidden = getUserRole() !== 'admin' || count === 0;
+    button.textContent = `Move ${count} old receipt${count === 1 ? '' : 's'} to private storage`;
+}
+
+async function migrateLegacyDonationReceipts() {
+    if (getUserRole() !== 'admin' || !supabaseClient) return;
+    const donations = getDonations();
+    const legacyDonations = donations.filter(donation => donation.proof?.dataUrl && !donation.proof.path);
+    if (!legacyDonations.length) return;
+    if (!window.confirm(`Move ${legacyDonations.length} existing receipt(s) to private Supabase Storage? The old embedded copies will be removed from the shared donation records after the move succeeds.`)) return;
+
+    const button = document.getElementById('migrateLegacyReceiptsBtn');
+    if (button) button.disabled = true;
+    const originalDonations = JSON.stringify(donations);
+    const uploadedProofs = [];
+    let migrationSaved = false;
+    let migrationSaveAttempted = false;
+    try {
+        for (const donation of legacyDonations) {
+            const response = await fetch(donation.proof.dataUrl);
+            if (!response.ok) throw new Error(`Could not read the old receipt for ${donationReference(donation.id)}.`);
+            const blob = await response.blob();
+            const file = new File([blob], donation.proof.name || `receipt-${donation.id}`, {
+                type: blob.type || donation.proof.type
+            });
+            const proof = await uploadDonationReceipt(file, donation.id);
+            uploadedProofs.push(proof);
+            donation.proof = proof;
+        }
+
+        migrationSaveAttempted = true;
+        await saveDonations(donations);
+        migrationSaved = true;
+        logActivity(`Moved ${legacyDonations.length} old donation receipt(s) to private storage`);
+        renderDashboard();
+        showSystemStatus(`Moved ${legacyDonations.length} existing receipt(s) to private storage. Only active administrators can open them.`);
+    } catch (error) {
+        console.error('Unable to move legacy donation receipts to private storage.', error);
+        if (!migrationSaveAttempted) {
+            try {
+                localStorage.setItem(STORAGE_KEY, originalDonations);
+            } catch (restoreError) {
+                console.error('Unable to restore the local donation list after receipt migration failed.', restoreError);
+            }
+        }
+        const cleanupErrors = [];
+        for (const proof of uploadedProofs) {
+            if (migrationSaveAttempted) break;
+            try {
+                await deleteStoredDonationReceipt(proof);
+            } catch (cleanupError) {
+                cleanupErrors.push(cleanupError.message);
+            }
+        }
+        const cleanupMessage = cleanupErrors.length
+            ? ` Some temporary uploads could not be removed: ${cleanupErrors.join('; ')}.`
+            : '';
+        const statusMessage = migrationSaved
+            ? `Receipts moved to private storage, but the page could not finish refreshing: ${error.message}.`
+            : migrationSaveAttempted
+                ? `Receipt migration save could not be confirmed: ${error.message}. Refresh Donation Tracking before retrying; the old files were kept and the private uploads were preserved to avoid breaking a save that may have completed.`
+                : `Receipt migration stopped: ${error.message}. Existing embedded receipts were kept.${cleanupMessage}`;
+        showSystemStatus(statusMessage, true);
+    } finally {
+        if (button) button.disabled = false;
+        renderLegacyReceiptMigrationButton();
+    }
 }
 
 function renderAdminOverview() {
@@ -2009,7 +2145,7 @@ function renderAdminTable(list) {
             : statusFilter !== 'all'
                 ? `No donations currently have the ${escapeHtml(capitalize(statusFilter))} status.`
                 : getUserRole() === 'staff' ? 'No donations available yet.' : 'No donations yet. Click "Add Donation" to create one.';
-        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:2rem; color: var(--gray);">${emptyMessage}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:2rem; color: var(--gray);">${emptyMessage}</td></tr>`;
         return;
     }
 
@@ -2018,6 +2154,15 @@ function renderAdminTable(list) {
 
     tbody.innerHTML = sorted.map(d => {
         const status = normalizeDonationStatus(d.status);
+        const proof = !d.proof
+            ? '—'
+            : isStaff
+                ? '<span class="muted-text">Admin only</span>'
+                : d.proof.path
+                    ? `<button type="button" class="btn btn-outline btn-xs" data-donation-receipt="${escapeHtml(d.proof.path)}">Download receipt</button>`
+                    : d.proof.dataUrl
+                        ? `<a href="${escapeHtml(d.proof.dataUrl)}" download="${escapeHtml(d.proof.name || 'receipt')}" target="_blank" rel="noopener">View old receipt</a>`
+                        : '—';
         const statusControl = isStaff
             ? `<span class="badge badge-${status === 'received' ? 'pending' : status === 'rejected' ? 'rejected' : 'success'}">${status === 'received' ? 'Pending' : capitalize(status)}</span>${status === 'rejected' && d.rejectionReason ? `<small class="rejection-reason">${escapeHtml(d.rejectionReason)}</small>` : ''}`
             : `<select class="form-control status-select" data-donation-status="${d.id}" aria-label="Status for ${donationReference(d.id)}">${DONATION_STATUSES.map(stage => `<option value="${stage}" ${stage === status ? 'selected' : ''}>${stage === 'received' ? 'Pending' : capitalize(stage)}</option>`).join('')}</select>${status === 'rejected' && d.rejectionReason ? `<small class="rejection-reason">${escapeHtml(d.rejectionReason)}</small>` : ''}`;
@@ -2034,6 +2179,7 @@ function renderAdminTable(list) {
             <td>${formatDate(d.date)}</td>
             <td>${escapeHtml(d.category || '—')}</td>
             <td>${statusControl}</td>
+            <td>${proof}</td>
             <td>${actions}</td>
         </tr>
     `;
@@ -2045,6 +2191,19 @@ function renderAdminTable(list) {
             if (button.dataset.donationAction === 'allocate') openAllocationModal(id);
             if (button.dataset.donationAction === 'edit') openEditModal(id);
             if (button.dataset.donationAction === 'delete') deleteDonation(id);
+        });
+    });
+    tbody.querySelectorAll('[data-donation-receipt]').forEach(button => {
+        button.addEventListener('click', async () => {
+            button.disabled = true;
+            try {
+                await openDonationReceipt(button.dataset.donationReceipt);
+            } catch (error) {
+                console.error('Unable to open donation receipt.', error);
+                window.alert(error.message);
+            } finally {
+                button.disabled = false;
+            }
         });
     });
     tbody.querySelectorAll('[data-donation-status]').forEach(select => {
@@ -2247,6 +2406,7 @@ function openAddModal() {
     document.getElementById('rejectionReason').required = false;
     document.getElementById('rejectionReasonGroup').hidden = true;
     document.getElementById('donationCustomUnit').hidden = true;
+    document.getElementById('existingProof').textContent = 'No receipt uploaded.';
     populateProjectOptions();
     document.getElementById('donationFormError').style.display = 'none';
     updateTypeFields();
@@ -2292,6 +2452,14 @@ function openEditModal(id) {
     document.getElementById('rejectionReason').required = normalizeDonationStatus(d.status) === 'rejected';
     document.getElementById('donorPublicRecognition').checked = d.publicRecognition === true && d.anonymous !== true;
     document.getElementById('donationFormError').style.display = 'none';
+    document.getElementById('donationProof').value = '';
+    document.getElementById('existingProof').textContent = d.proof
+        ? d.proof.path
+            ? `Current receipt: ${d.proof.name || 'stored privately'}. Choose a file to replace it.`
+            : d.proof.dataUrl
+                ? 'A previously uploaded receipt is still embedded in this record. Move it to private storage from the donation list.'
+                : 'No receipt uploaded.'
+        : 'No receipt uploaded.';
     updateTypeFields();
     toggleModal(true);
 }
@@ -2302,9 +2470,9 @@ function toggleModal(show) {
 }
 
 /* ---------- FORM SUBMIT ---------- */
-function handleFormSubmit(e) {
+async function handleFormSubmit(e) {
     e.preventDefault();
-    if (getUserRole() === 'staff') return;
+    if (getUserRole() === 'staff' || donationSaveInProgress) return;
     const list = getDonations();
     const error = document.getElementById('donationFormError');
     error.style.display = 'none';
@@ -2367,56 +2535,110 @@ function handleFormSubmit(e) {
         return;
     }
 
+    const proofFile = document.getElementById('donationProof').files[0];
+    if (proofFile && !DONATION_RECEIPT_TYPES.has(proofFile.type)) {
+        error.textContent = 'Choose a PDF, JPEG, PNG, or WebP receipt.';
+        error.style.display = 'block';
+        return;
+    }
+    if (proofFile && (proofFile.size <= 0 || proofFile.size > 512 * 1024)) {
+        error.textContent = 'Receipt files must be between 1 byte and 512 KB.';
+        error.style.display = 'block';
+        return;
+    }
+
+    donationSaveInProgress = true;
+    const submitButton = e.currentTarget.querySelector('button[type="submit"]');
+    if (submitButton) submitButton.disabled = true;
+    let uploadedProof = null;
+    let targetId = editingId;
     try {
         Object.assign(data, resolveDonationDonor(
             donorSelection,
             document.getElementById('donorName').value
         ));
         data.publicRecognition = data.anonymous ? false : data.publicRecognition;
-    } catch (donorError) {
-        error.textContent = donorError.message;
-        error.style.display = 'block';
-        return;
-    }
-
-    if (editingId) {
-        const idx = list.findIndex(d => d.id === editingId);
-        if (idx < 0) {
-            error.textContent = 'This donation record no longer exists. Close the form and try again.';
-            error.style.display = 'block';
-            return;
+        targetId = editingId || nextId(list);
+        const existingDonation = list.find(donation => donation.id === targetId);
+        if (editingId && !existingDonation) {
+            throw new Error('This donation record no longer exists. Close the form and try again.');
         }
-        list[idx] = { ...list[idx], ...data };
-    } else {
-        list.push({ id: nextId(list), ...data });
-    }
-    const savedDonation = list.find(donation => donation.id === (editingId || list[list.length - 1].id));
-    try {
-        saveDonations(list);
-    } catch (storageError) {
-        error.textContent = 'The donation could not be saved in browser storage. Remove unused data and try again.';
+        const previousProof = existingDonation?.proof;
+        if (proofFile) {
+            uploadedProof = await uploadDonationReceipt(proofFile, targetId);
+            data.proof = uploadedProof;
+        }
+        const savedDonation = { ...existingDonation, id: targetId, ...data };
+        const updatedList = existingDonation
+            ? list.map(donation => donation.id === targetId ? savedDonation : donation)
+            : [...list, savedDonation];
+        const syncPromise = saveDonations(updatedList);
+        editingId = targetId;
+        if (proofFile) document.getElementById('donationProof').value = '';
+        await syncPromise;
+
+        if (uploadedProof && previousProof?.path && previousProof.path !== uploadedProof.path) {
+            try {
+                await deleteStoredDonationReceipt(previousProof);
+            } catch (cleanupError) {
+                console.error('Donation was saved, but the replaced receipt could not be removed.', cleanupError);
+                showSystemStatus(`Donation saved, but its previous receipt could not be removed from private storage: ${cleanupError.message}`, true);
+            }
+        }
+        try {
+            syncDonorFromDonation(savedDonation);
+        } catch (donorError) {
+            console.error('Donation saved, but its donor record could not be updated.', donorError);
+            window.alert('The donation was saved, but the donor profile could not be updated. Please update the donor record manually.');
+        }
+        logActivity(`${editingId === targetId && existingDonation ? 'Updated' : 'Recorded'} donation ${donationReference(savedDonation.id)}`);
+        toggleModal(false);
+        renderDashboard();
+        renderDonorTable();
+        renderPublicPage();
+    } catch (saveError) {
+        console.error('Unable to save donation.', saveError);
+        if (uploadedProof) {
+            const cachedDonation = getDonations().find(donation => donation.id === targetId);
+            if (cachedDonation?.proof?.path !== uploadedProof.path) {
+                try {
+                    await deleteStoredDonationReceipt(uploadedProof);
+                } catch (cleanupError) {
+                    console.error('Unable to remove the receipt upload after the donation save failed.', cleanupError);
+                    showSystemStatus(`Donation save failed, and the unused receipt upload could not be removed: ${cleanupError.message}`, true);
+                }
+            }
+        }
+        error.textContent = `The donation could not be saved: ${saveError.message}. If the change was saved locally but did not sync, use Retry sync before leaving this browser.`;
         error.style.display = 'block';
-        return;
+    } finally {
+        donationSaveInProgress = false;
+        if (submitButton) submitButton.disabled = false;
     }
-    try {
-        syncDonorFromDonation(savedDonation);
-    } catch (donorError) {
-        console.error('Donation saved, but its donor record could not be updated.', donorError);
-        window.alert('The donation was saved, but the donor profile could not be updated in browser storage. Please update the donor record manually.');
-    }
-    logActivity(`${editingId ? 'Updated' : 'Recorded'} donation ${donationReference(savedDonation.id)}`);
-    toggleModal(false);
-    renderDashboard();
-    renderDonorTable();
-    renderPublicPage();
 }
 
 /* ---------- DELETE ---------- */
-function deleteDonation(id) {
+async function deleteDonation(id) {
     if (getUserRole() === 'staff') return;
     if (!confirm('Are you sure you want to delete this donation record?')) return;
+    const donation = getDonations().find(d => d.id === id);
+    if (!donation) return;
     const list = getDonations().filter(d => d.id !== id);
-    saveDonations(list);
+    try {
+        await saveDonations(list);
+    } catch (error) {
+        console.error('Unable to delete donation record.', error);
+        showSystemStatus(`The donation record could not be synced as deleted: ${error.message}`, true);
+        return;
+    }
+    if (donation.proof?.path) {
+        try {
+            await deleteStoredDonationReceipt(donation.proof);
+        } catch (error) {
+            console.error('Donation was deleted, but its receipt could not be removed from private storage.', error);
+            showSystemStatus(`Donation deleted, but its receipt could not be removed from private storage: ${error.message}`, true);
+        }
+    }
     logActivity(`Deleted donation ${donationReference(id)}`);
     renderDashboard();
     renderPublicPage();
@@ -3812,6 +4034,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     document.getElementById('donationForm')?.addEventListener('submit', handleFormSubmit);
+    document.getElementById('migrateLegacyReceiptsBtn')?.addEventListener('click', migrateLegacyDonationReceipts);
     document.getElementById('donorSelection')?.addEventListener('change', updateDonationDonorFields);
     document.getElementById('donorSelection')?.addEventListener('change', event => {
         const search = document.getElementById('donationDonorSearch');
