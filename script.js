@@ -543,6 +543,129 @@ async function openDonationReceipt(path) {
     }
 }
 
+function createDonationAcknowledgement(donation) {
+    if (getUserRole() !== 'admin') return;
+    const receiptWindow = window.open('', '_blank');
+    if (!receiptWindow) {
+        window.alert('Allow pop-ups for this site to create the KBK donation receipt.');
+        return;
+    }
+
+    const isCash = donation.type === 'cash';
+    const donationDetail = isCash
+        ? `<strong class="amount">${escapeHtml(peso(donation.amount))}</strong><span>Cash donation</span>`
+        : `<strong>${escapeHtml(formatInKindDonation(donation))}</strong><span>In-kind donation</span>`;
+    const project = getProjects().find(item => Number(item.id) === Number(donation.projectId));
+    const projectName = project?.name || (donation.projectId ? 'Project details unavailable' : 'General community support');
+    const status = capitalize(normalizeDonationStatus(donation.status));
+    const donor = getDonationDonorName(donation);
+    const generatedDate = new Date().toLocaleString('en-PH', {
+        year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'
+    });
+    const logoUrl = new URL('photo.png/logo1.png', window.location.href).href;
+    const receiptHtml = `<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>KBK Donation Acknowledgment — ${escapeHtml(donationReference(donation.id))}</title>
+    <style>
+        :root { color-scheme: light; --green: #176b45; --deep-green: #124d36; --gold: #d5a832; --ink: #1d2a24; --muted: #66736c; --line: #dfe8e1; }
+        * { box-sizing: border-box; }
+        body { margin: 0; padding: 34px 18px; background: #f1f5f2; color: var(--ink); font: 15px/1.5 Arial, Helvetica, sans-serif; }
+        .toolbar { max-width: 760px; margin: 0 auto 16px; display: flex; justify-content: flex-end; gap: 10px; }
+        .toolbar button { border: 0; border-radius: 8px; background: var(--green); color: #fff; padding: 11px 16px; font: inherit; font-weight: 700; cursor: pointer; }
+        .toolbar button.secondary { background: #e4ece6; color: var(--deep-green); }
+        .receipt { position: relative; overflow: hidden; max-width: 760px; min-height: 920px; margin: auto; padding: 42px 48px; background: #fff; border: 1px solid var(--line); border-top: 7px solid var(--green); border-radius: 14px; box-shadow: 0 12px 36px #163f2b16; }
+        .receipt:after { content: ""; position: absolute; z-index: 0; width: 250px; height: 250px; right: -130px; top: 180px; border: 24px solid #eaf3ec; border-radius: 50%; pointer-events: none; }
+        .receipt > * { position: relative; z-index: 1; }
+        .brand { display: flex; align-items: center; gap: 18px; padding-bottom: 24px; border-bottom: 1px solid var(--line); }
+        .brand img { width: 76px; height: 76px; object-fit: contain; border-radius: 12px; }
+        .brand h1 { margin: 0; color: var(--deep-green); font-size: 21px; line-height: 1.25; }
+        .brand p { margin: 5px 0 0; color: var(--muted); font-size: 13px; }
+        .title-row { display: flex; justify-content: space-between; gap: 18px; align-items: flex-start; padding: 30px 0 22px; }
+        .eyebrow { margin: 0 0 5px; color: var(--green); font-size: 11px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; }
+        .title-row h2 { margin: 0; font-size: 27px; line-height: 1.2; }
+        .ref { flex: 0 0 auto; padding: 9px 12px; border: 1px solid #dbe8df; border-radius: 9px; color: var(--deep-green); background: #f5faf6; font-weight: 800; letter-spacing: .04em; }
+        .thank-you { margin: 0 0 23px; color: var(--muted); }
+        .donation-card { display: flex; align-items: center; gap: 16px; padding: 19px; border: 1px solid #dceadf; border-radius: 12px; background: linear-gradient(110deg, #f1f8f2, #fffdf6); }
+        .icon-badge { display: grid; width: 48px; height: 48px; flex: 0 0 auto; place-items: center; border-radius: 50%; background: #e0efe4; color: var(--green); }
+        .icon-badge svg, .detail-icon svg { width: 23px; height: 23px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+        .donation-card strong { display: block; color: var(--deep-green); font-size: 21px; }
+        .donation-card strong.amount { font-size: 27px; }
+        .donation-card span { color: var(--muted); font-size: 13px; }
+        .section-label { margin: 27px 0 11px; color: var(--muted); font-size: 11px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+        .details { display: grid; grid-template-columns: 1fr 1fr; gap: 0 26px; border-top: 1px solid var(--line); }
+        .detail { display: flex; gap: 11px; min-width: 0; padding: 15px 0; border-bottom: 1px solid var(--line); }
+        .detail-icon { display: grid; width: 34px; height: 34px; flex: 0 0 auto; place-items: center; border-radius: 9px; background: #f1f6f2; color: var(--green); }
+        .detail small { display: block; margin-bottom: 3px; color: var(--muted); font-size: 11px; }
+        .detail strong { display: block; overflow-wrap: anywhere; font-size: 14px; }
+        .status { display: inline-flex !important; width: fit-content; align-items: center; gap: 6px; padding: 4px 9px; border-radius: 20px; background: #edf5ef; color: var(--deep-green); font-size: 12px !important; }
+        .status:before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--gold); }
+        .note { margin-top: 25px; padding: 13px 15px; border-left: 3px solid var(--gold); border-radius: 4px 9px 9px 4px; background: #fff9e9; color: #65552b; font-size: 12px; }
+        .signatures { display: grid; grid-template-columns: 1fr 1fr; gap: 38px; margin-top: 45px; }
+        .signature { padding-top: 9px; border-top: 1px solid #99a69e; color: var(--muted); font-size: 12px; }
+        footer { margin-top: 35px; padding-top: 16px; border-top: 1px solid var(--line); color: var(--muted); text-align: center; font-size: 11px; }
+        @page { size: A4; margin: 12mm; }
+        @media print {
+            body { padding: 0; background: #fff; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+            .toolbar { display: none !important; }
+            .receipt { width: 100%; max-width: none; min-height: 0; padding: 25px 30px; border-radius: 0; border-left: 0; border-right: 0; box-shadow: none; }
+            .receipt:after { right: -130px; }
+            .details, .donation-card, .signatures { break-inside: avoid; }
+        }
+        @media (max-width: 600px) {
+            body { padding: 14px 8px; }
+            .receipt { min-height: 0; padding: 25px 20px; }
+            .title-row { flex-direction: column; }
+            .details { grid-template-columns: 1fr; }
+            .brand img { width: 60px; height: 60px; }
+            .brand h1 { font-size: 18px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="toolbar"><button class="secondary" type="button" onclick="window.close()">Close</button><button type="button" onclick="window.print()">Print / Save as PDF</button></div>
+    <main class="receipt">
+        <header class="brand"><img id="receiptLogo" src="${escapeHtml(logoUrl)}" alt="KBK logo"><div><h1>KBK Community Donation Tracking System</h1><p>Transparency · Accountability · Community</p></div></header>
+        <div class="title-row"><div><p class="eyebrow">Donation record</p><h2>Donation acknowledgment</h2></div><div class="ref">${escapeHtml(donationReference(donation.id))}</div></div>
+        <p class="thank-you">Thank you, <strong>${escapeHtml(donor)}</strong>, for supporting our community. This record acknowledges the donation entered into the KBK system.</p>
+        <section class="donation-card"><span class="icon-badge"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18m5-14H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span><div>${donationDetail}</div></section>
+        <p class="section-label">Donation details</p>
+        <section class="details">
+            <div class="detail"><span class="detail-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/></svg></span><div><small>Donor</small><strong>${escapeHtml(donor)}</strong></div></div>
+            <div class="detail"><span class="detail-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M8 3v4m8-4v4M4 10h16"/></svg></span><div><small>Date received</small><strong>${escapeHtml(formatDate(donation.date))}</strong></div></div>
+            <div class="detail"><span class="detail-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16v13H4zM8 7V4h8v3m-8 5h8m-8 4h5"/></svg></span><div><small>Donation type</small><strong>${isCash ? 'Cash donation' : 'In-kind donation'}</strong></div></div>
+            <div class="detail"><span class="detail-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4 7v5c0 5 3.5 8 8 9 4.5-1 8-4 8-9V7l-8-4Z"/><path d="m9 12 2 2 4-4"/></svg></span><div><small>Record status</small><strong><span class="status">${escapeHtml(status)}</span></strong></div></div>
+            <div class="detail"><span class="detail-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10"/></svg></span><div><small>Purpose</small><strong>${escapeHtml(donation.category || 'Community support')}</strong></div></div>
+            <div class="detail"><span class="detail-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10 12 4l9 6v10H3zM9 20v-6h6v6"/></svg></span><div><small>Project / activity</small><strong>${escapeHtml(projectName)}</strong></div></div>
+        </section>
+        <div class="note"><strong>Please note:</strong> This is a donation acknowledgment generated from the KBK system. It is not a tax invoice, official government receipt, or certification of tax deductibility. The uploaded proof, if any, is available separately to authorized administrators.</div>
+        <section class="signatures"><div class="signature">Donor acknowledgment (optional)</div><div class="signature">KBK representative</div></section>
+        <footer>Generated ${escapeHtml(generatedDate)} · Keep this record for your reference.<br>KBK Community Donation Tracking System</footer>
+    </main>
+</body>
+</html>`;
+
+    receiptWindow.opener = null;
+    receiptWindow.document.open();
+    receiptWindow.document.write(receiptHtml);
+    receiptWindow.document.close();
+    const logo = receiptWindow.document.getElementById('receiptLogo');
+    let printScheduled = false;
+    const schedulePrint = () => {
+        if (printScheduled) return;
+        printScheduled = true;
+        receiptWindow.setTimeout(() => receiptWindow.print(), 300);
+    };
+    if (logo.complete) schedulePrint();
+    else {
+        logo.addEventListener('load', schedulePrint, { once: true });
+        logo.addEventListener('error', schedulePrint, { once: true });
+        receiptWindow.setTimeout(schedulePrint, 1500);
+    }
+}
+
 function getDonors() {
     const raw = localStorage.getItem(DONOR_KEY);
     if (!raw) {
@@ -1708,9 +1831,10 @@ function insertAdminPageGuide() {
             ]
         },
         'donations.html': {
-            summary: 'Record incoming cash and item donations, verify them, and keep each donor’s history connected.',
+            summary: 'Record and verify donations, create a branded acknowledgment, and keep any uploaded proof private.',
             tips: [
                 'Search for an existing donor before creating a new profile to avoid duplicates.',
+                'Use Create KBK receipt for a print-ready acknowledgment; download uploaded proof separately.',
                 'Verify a donation only after checking its details and any supporting receipt.',
                 'Use the status filter to review pending, verified, allocated, distributed, completed, or rejected records.'
             ]
@@ -1779,9 +1903,9 @@ function insertAdminPageGuide() {
             ]
         },
         'reports.html': {
-            summary: 'Generate and download CSV reports for a selected record type and reporting period.',
+            summary: 'Choose a report type and date range, then download the records as a spreadsheet-friendly CSV file.',
             tips: [
-                'Choose the report type and check the date range before generating the CSV.',
+                'Choose the report type and check the date range before downloading the report.',
                 'Review exported files before sharing; reports may contain personal or operational information.',
                 'Store downloaded reports in an access-controlled location.'
             ]
@@ -2155,13 +2279,13 @@ function renderAdminTable(list) {
     tbody.innerHTML = sorted.map(d => {
         const status = normalizeDonationStatus(d.status);
         const proof = !d.proof
-            ? '—'
+            ? (isStaff ? '—' : `<button type="button" class="btn btn-outline btn-xs" data-donation-acknowledgement="${Number(d.id)}">Create KBK receipt</button>`)
             : isStaff
                 ? '<span class="muted-text">Admin only</span>'
                 : d.proof.path
-                    ? `<button type="button" class="btn btn-outline btn-xs" data-donation-receipt="${escapeHtml(d.proof.path)}">Download receipt</button>`
+                    ? `<div class="action-group"><button type="button" class="btn btn-outline btn-xs" data-donation-acknowledgement="${Number(d.id)}">Create KBK receipt</button><button type="button" class="btn btn-outline btn-xs" data-donation-receipt="${escapeHtml(d.proof.path)}">Download uploaded proof</button></div>`
                     : d.proof.dataUrl
-                        ? `<a href="${escapeHtml(d.proof.dataUrl)}" download="${escapeHtml(d.proof.name || 'receipt')}" target="_blank" rel="noopener">View old receipt</a>`
+                        ? `<div class="action-group"><button type="button" class="btn btn-outline btn-xs" data-donation-acknowledgement="${Number(d.id)}">Create KBK receipt</button><a class="btn btn-outline btn-xs" href="${escapeHtml(d.proof.dataUrl)}" download="${escapeHtml(d.proof.name || 'uploaded-proof')}" target="_blank" rel="noopener">Download uploaded proof</a></div>`
                         : '—';
         const statusControl = isStaff
             ? `<span class="badge badge-${status === 'received' ? 'pending' : status === 'rejected' ? 'rejected' : 'success'}">${status === 'received' ? 'Pending' : capitalize(status)}</span>${status === 'rejected' && d.rejectionReason ? `<small class="rejection-reason">${escapeHtml(d.rejectionReason)}</small>` : ''}`
@@ -2204,6 +2328,16 @@ function renderAdminTable(list) {
             } finally {
                 button.disabled = false;
             }
+        });
+    });
+    tbody.querySelectorAll('[data-donation-acknowledgement]').forEach(button => {
+        button.addEventListener('click', () => {
+            const donation = getDonations().find(item => Number(item.id) === Number(button.dataset.donationAcknowledgement));
+            if (!donation) {
+                window.alert('This donation record is no longer available. Refresh the page and try again.');
+                return;
+            }
+            createDonationAcknowledgement(donation);
         });
     });
     tbody.querySelectorAll('[data-donation-status]').forEach(select => {
@@ -3658,7 +3792,7 @@ function downloadReport() {
     link.download = `kbk-${type}-report.csv`;
     link.click();
     URL.revokeObjectURL(url);
-    setText('reportMessage', `Generated ${rows.length} row(s) for this report.`);
+    setText('reportMessage', `Downloaded a CSV report with ${rows.length} row(s).`);
     logActivity(`Generated ${type} report`);
 }
 
