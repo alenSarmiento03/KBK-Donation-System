@@ -203,6 +203,14 @@ body {
 .request-consent { display: flex; align-items: flex-start; gap: 0.55rem; margin: 1rem 0; color: var(--gray); font-size: 0.86rem; }
 .request-consent input { flex: 0 0 auto; margin-top: 0.25rem; accent-color: var(--primary); }
 .request-form-message { min-height: 1.5em; margin-top: 0.75rem; color: var(--primary-dark); font-weight: 600; }
+.public-data-status, .request-admin-status { padding: 0.75rem 1rem; margin: 0 0 1rem; border: 1px solid #d5dfd0; border-radius: 8px; background: #f3f8f1; color: var(--primary-dark); font-size: 0.9rem; }
+.public-data-status[hidden] { display: none; }
+.request-admin-status:empty { display: none; }
+.public-request-form small { display: block; margin-top: 0.35rem; color: var(--gray); font-size: 0.8rem; }
+.field-optional { color: var(--gray); font-size: 0.82em; font-weight: 400; }
+.public-request-form button[disabled] { cursor: wait; opacity: 0.7; }
+.request-form-message[data-error="true"] { color: #9b2c25; }
+.request-admin-status[data-error="true"] { border-color: #e6b6b3; background: #fff1f0; color: #842029; }
 .request-list-header { margin-top: 1.5rem; }
 
 .leaderboard {

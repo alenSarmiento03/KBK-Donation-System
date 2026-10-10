@@ -31,13 +31,15 @@
             <h1>Small acts, lasting impact.</h1>
             <p>Transparent donations, current campaigns, and community impact.</p>
             <div class="public-home-actions">
-                <a class="public-request-link" href="donate.html">How to Donate</a>
+                <a class="public-request-link" href="#assistance-request">Request Assistance</a>
+                <a class="public-impact-link" href="donate.html">How to Donate</a>
                 <a class="public-impact-link" href="transparency.html">Explore Community Progress</a>
             </div>
         </div>
     </header>
 
     <main class="container public-dashboard-container">
+        <p class="public-data-status" id="publicDataStatus" role="status" aria-live="polite">Loading the latest community data…</p>
         <section class="public-summary-section" aria-labelledby="donation-summary-heading">
             <div class="public-section-heading">
                 <div><h2 class="section-title" id="donation-summary-heading">Our Donations at a Glance</h2><p>Approved donations and the people they help</p></div>
@@ -77,23 +79,18 @@
         <section class="public-campaigns" aria-labelledby="campaign-progress-heading">
             <h2 class="section-title" id="campaign-progress-heading">Current Campaign Progress</h2>
             <p class="transparency-intro">Progress includes verified cash donations linked to each active campaign.</p>
-            <div class="impact-grid" id="publicCampaignProgress" aria-live="polite"></div>
+            <div class="impact-grid" id="publicCampaignProgress" aria-live="polite" aria-busy="true"><p class="empty-table">Loading campaigns…</p></div>
             <a class="btn btn-outline" href="public-projects.html?status=active">View Active Campaigns</a>
         </section>
         <section class="public-project-transparency" aria-labelledby="where-donations-go-heading">
             <h2 class="section-title" id="where-donations-go-heading">Where Your Donations Go</h2>
             <p class="transparency-intro">See verified donations, recorded allocations, and reviewed project expenses separately. A negative remaining balance means verified expenses exceed recorded allocations.</p>
-            <div class="impact-grid" id="publicProjectTransparency" aria-live="polite"></div>
+            <div class="impact-grid" id="publicProjectTransparency" aria-live="polite" aria-busy="true"><p class="empty-table">Loading project figures…</p></div>
         </section>
         <section class="public-transparency" aria-labelledby="transparency-heading">
             <h2 class="section-title" id="transparency-heading"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M4 12h16M12 4a12 12 0 0 1 0 16"/></svg></span> Transparency Dashboard</h2>
             <p class="transparency-intro">A clear, aggregate view of donations and how funds are being used.</p>
             <div class="stats-grid transparency-stats">
-                <article class="stat-card">
-                    <div class="stat-label">Verified Cash Donations</div>
-                    <div class="stat-value" id="publicTotal">₱0.00</div>
-                    <div class="stat-sub">Approved records only</div>
-                </article>
                 <article class="stat-card accent">
                     <div class="stat-label">Allocated</div>
                     <div class="stat-value" id="publicAllocated">₱0.00</div>
@@ -103,11 +100,6 @@
                     <div class="stat-label">Verified Expenses</div>
                     <div class="stat-value" id="publicUsed">₱0.00</div>
                     <div class="stat-sub">Reviewed expenses only</div>
-                </article>
-                <article class="stat-card warning">
-                    <div class="stat-label">Beneficiaries Helped</div>
-                    <div class="stat-value" id="publicHelped">0</div>
-                    <div class="stat-sub">Unique people with assistance recorded</div>
                 </article>
                 <article class="stat-card">
                     <div class="stat-label">Active Projects</div>
@@ -133,39 +125,38 @@
         <section class="public-impact" aria-labelledby="impact-heading">
             <h2 class="section-title" id="impact-heading">Community Progress & Accomplishments</h2>
             <p class="transparency-intro">See how project-linked donations connect to recorded distributions and community support.</p>
-            <div class="impact-grid" id="publicImpactCards" aria-live="polite"></div>
+            <div class="impact-grid" id="publicImpactCards" aria-live="polite" aria-busy="true"><p class="empty-table">Loading community progress…</p></div>
         </section>
 
         <section class="public-distributions" aria-labelledby="public-distributions-heading">
             <h2 class="section-title" id="public-distributions-heading">Public Distribution Records</h2>
             <p class="transparency-intro">Summaries include distributions marked distributed or completed. Personal recipient details are not shown.</p>
-            <div class="public-distribution-grid" id="publicDistributionRecords" aria-live="polite"></div>
+            <div class="public-distribution-grid" id="publicDistributionRecords" aria-live="polite" aria-busy="true"><p class="empty-table">Loading distribution summaries…</p></div>
         </section>
         </div>
 
         <aside class="public-dashboard-secondary" aria-label="Community information">
         <section class="public-needs-overview" aria-labelledby="current-needs-heading">
             <div class="public-section-heading"><div><h2 class="section-title" id="current-needs-heading">Current Needs</h2><p>Items and quantities currently requested by KBK</p></div></div>
-            <div class="public-needs-list" id="publicCurrentNeeds" aria-live="polite"></div>
+            <div class="public-needs-list" id="publicCurrentNeeds" aria-live="polite" aria-busy="true"><p class="empty-table">Loading current needs…</p></div>
             <p class="public-privacy-note">Stock and requested quantities are maintained by KBK. Fully supplied items are clearly marked and are no longer shown as urgent.</p>
             <a class="public-text-link" href="categories.html">All categories &amp; needs</a>
         </section>
         <section class="public-assistance-request" id="assistance-request" aria-labelledby="assistance-request-heading">
             <h2 class="section-title" id="assistance-request-heading">Request Assistance</h2>
             <p class="transparency-intro">Submit a request for KBK to review. Approval is not guaranteed; an administrator will assess the information.</p>
-            <p class="request-storage-note">This demo stores requests in this browser only. They are not sent to a server, monitored, or securely synchronized; do not include highly sensitive information. Requests appear in the admin review queue only when an administrator uses this same browser.</p>
+            <p class="request-storage-note">Your request is sent securely to KBK and can be viewed only by active KBK administrators. We use your contact details to review your request and follow up. Please share only information needed to explain your request; do not include passwords, financial account details, or unnecessary medical details. To ask KBK to delete your request, email <a href="mailto:ryealensarmiento@gmail.com">ryealensarmiento@gmail.com</a>.</p>
             <form id="publicAssistanceForm" class="public-request-form">
                 <div class="form-row">
-                    <div class="form-group"><label for="requestName">Name</label><input class="form-control" id="requestName" name="name" type="text" maxlength="120" autocomplete="name" required></div>
-                    <div class="form-group"><label for="requestContact">Contact information</label><input class="form-control" id="requestContact" name="contact" type="text" maxlength="160" autocomplete="email" placeholder="Phone number or email" required></div>
+                    <div class="form-group"><label for="requestName">Name <span class="field-optional">(optional)</span></label><input class="form-control" id="requestName" name="name" type="text" maxlength="120" autocomplete="name"></div>
+                    <div class="form-group"><label for="requestContact">Email or phone number</label><input class="form-control" id="requestContact" name="contact" type="text" maxlength="160" autocomplete="on" placeholder="name@example.com or phone number" required aria-describedby="requestContactHelp"><small id="requestContactHelp">We need one way to contact you about your request.</small></div>
                 </div>
                 <div class="form-row">
                     <div class="form-group"><label for="requestType">Type of assistance</label><select class="form-control" id="requestType" name="type" required><option value="">Select a type</option><option>Food</option><option>Education</option><option>Medical</option><option>Emergency</option><option>Other</option></select></div>
                     <div class="form-group"><label for="requestQuantity">Quantity needed</label><input class="form-control" id="requestQuantity" name="quantity" type="text" maxlength="120" placeholder="e.g. 2 food packs"></div>
                 </div>
-                <div class="form-group"><label for="requestDescription">Description</label><textarea class="form-control" id="requestDescription" name="description" rows="4" maxlength="1500" required></textarea></div>
-                <div class="form-group"><label for="requestSupportingInfo">Supporting information (optional)</label><textarea class="form-control" id="requestSupportingInfo" name="supportingInfo" rows="3" maxlength="1500" placeholder="Share any context that may help KBK review your request. Do not include passwords or financial account details."></textarea></div>
-                <label class="request-consent"><input id="requestConsent" type="checkbox" required> I understand that this request includes personal information for KBK to review and, in this demo, is stored in this browser.</label>
+                <div class="form-group"><label for="requestDescription">What help do you need?</label><textarea class="form-control" id="requestDescription" name="description" rows="4" minlength="10" maxlength="1500" required aria-describedby="requestDescriptionHelp"></textarea><small id="requestDescriptionHelp">Include only details needed to understand your request.</small></div>
+                <label class="request-consent"><input id="requestConsent" type="checkbox" required> I understand that KBK administrators will use my information to review and follow up on this request.</label>
                 <button class="btn btn-primary" type="submit">Submit Request</button>
                 <p class="request-form-message" id="requestFormMessage" role="status" aria-live="polite"></p>
             </form>

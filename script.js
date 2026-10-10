@@ -29,6 +29,7 @@ const pendingSharedWrites = new Map();
 const remoteRevisions = new Map();
 let publicUniqueDonorCount = null;
 let publicBeneficiariesHelped = null;
+let remoteAssistanceRequests = null;
 
 function showSystemStatus(message, isError = false) {
     let status = document.getElementById('kbkSystemStatus');
@@ -153,6 +154,28 @@ async function loadPublicSharedData() {
         if (Object.prototype.hasOwnProperty.call(data, key)) cacheRemoteValue(key, data[key]);
         else cacheRemoteValue(key, []);
     }
+}
+
+async function loadAdminAssistanceRequests() {
+    if (!supabaseClient || !supabaseUser || getUserRole() !== 'admin') {
+        throw new Error('A signed-in KBK administrator is required to load assistance requests.');
+    }
+    const { data, error } = await supabaseClient
+        .from('kbk_assistance_requests')
+        .select('id,requester_name,contact,assistance_type,quantity,description,status,submitted_at,reviewed_at')
+        .order('submitted_at', { ascending: false });
+    if (error) throw new Error(error.message);
+    remoteAssistanceRequests = data.map(request => ({
+        id: request.id,
+        name: request.requester_name || '',
+        contact: request.contact,
+        type: request.assistance_type,
+        quantity: request.quantity || '',
+        description: request.description,
+        status: request.status,
+        submittedAt: request.submitted_at,
+        reviewedAt: request.reviewed_at
+    }));
 }
 
 async function initializeSupabaseForPage(page) {
@@ -720,7 +743,19 @@ async function logout() {
 /* ---------- RENDER: PUBLIC PAGE ---------- */
 let selectedCategory = null;
 
+function updatePublicDataStatus() {
+    const status = document.getElementById('publicDataStatus');
+    if (!status) return;
+    if (supabaseInitializationError) {
+        status.hidden = false;
+        status.textContent = 'Live community data could not be loaded. Any figures shown may be saved in this browser and could be out of date; please try again later.';
+        return;
+    }
+    status.hidden = true;
+}
+
 function renderPublicPage() {
+    updatePublicDataStatus();
     const publicDonations = getDonations().filter(donation =>
         ['verified', 'allocated', 'distributed', 'completed'].includes(String(donation.status).toLowerCase())
     );
@@ -1049,43 +1084,84 @@ function publicDistributionQuantity(value) {
 }
 
 function handlePublicAssistanceSubmit(event) {
+    void submitPublicAssistanceRequest(event);
+}
+
+async function submitPublicAssistanceRequest(event) {
     event.preventDefault();
     const message = document.getElementById('requestFormMessage');
     const form = event.currentTarget;
+    const submitButton = form.querySelector('button[type="submit"]');
+    const contactInput = document.getElementById('requestContact');
+    const contact = contactInput.value.trim();
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const phonePattern = /^\+?[\d\s().-]{7,20}$/;
+    const phoneDigits = contact.replace(/\D/g, '');
+    contactInput.setCustomValidity(
+        emailPattern.test(contact) || (phonePattern.test(contact) && phoneDigits.length >= 7 && phoneDigits.length <= 15)
+            ? ''
+            : 'Enter a valid email address or phone number.'
+    );
+    message.dataset.error = 'false';
+    if (!form.reportValidity()) return;
+
     const request = {
-        id: Date.now(),
         name: document.getElementById('requestName').value.trim(),
-        contact: document.getElementById('requestContact').value.trim(),
+        contact,
         type: document.getElementById('requestType').value,
         description: document.getElementById('requestDescription').value.trim(),
-        quantity: document.getElementById('requestQuantity').value.trim(),
-        supportingInfo: document.getElementById('requestSupportingInfo').value.trim(),
-        status: 'Pending',
-        submittedAt: new Date().toISOString()
+        quantity: document.getElementById('requestQuantity').value.trim()
     };
-    if (!request.name || !request.contact || !request.type || !request.description || !document.getElementById('requestConsent').checked) {
-        message.textContent = 'Complete all required fields and confirm the privacy notice before submitting.';
+    if (!request.type || !request.description || !document.getElementById('requestConsent').checked) {
+        message.dataset.error = 'true';
+        message.textContent = 'Complete the required fields and confirm the privacy notice before submitting.';
         return;
     }
+
+    if (!supabaseClient || supabaseInitializationError) {
+        message.dataset.error = 'true';
+        message.textContent = 'Online request submission is not available right now. Please contact KBK by email or try again later.';
+        return;
+    }
+
+    submitButton.disabled = true;
+    form.setAttribute('aria-busy', 'true');
+    message.textContent = 'Submitting your request securely…';
     try {
-        const requests = getAssistanceRequests();
-        request.id = nextId(requests);
-        requests.push(request);
-        saveStoredList(ASSISTANCE_REQUEST_KEY, requests);
+        const { error } = await supabaseClient.from('kbk_assistance_requests').insert({
+            requester_name: request.name || null,
+            contact: request.contact,
+            assistance_type: request.type,
+            description: request.description,
+            quantity: request.quantity || null
+        });
+        if (error) throw new Error(error.message);
+        form.reset();
+        message.dataset.error = 'false';
+        message.textContent = 'Your request was sent to KBK. An administrator will review it; contact KBK directly if you need urgent help.';
     } catch (error) {
-        console.error('Unable to save assistance request.', error);
-        message.textContent = 'Your request could not be saved in this browser. Please try again later.';
-        return;
+        console.error('Unable to submit assistance request.', error);
+        message.dataset.error = 'true';
+        message.textContent = 'Your request could not be sent. Please try again later or contact KBK by email. No request was saved in this browser.';
+    } finally {
+        submitButton.disabled = false;
+        form.removeAttribute('aria-busy');
     }
-    form.reset();
-    message.textContent = 'Your request has been saved for review in this browser. Please contact KBK directly if you need urgent help.';
 }
 
 function renderAssistanceRequests() {
     const tbody = document.getElementById('assistanceRequestTableBody');
     if (!tbody) return;
     const canReview = getUserRole() !== 'staff';
-    const requests = getAssistanceRequests().sort((a, b) => String(b.submittedAt).localeCompare(String(a.submittedAt)));
+    if (!canReview) {
+        tbody.innerHTML = '<tr><td colspan="7" class="empty-table">Only active administrators can view assistance request details.</td></tr>';
+        return;
+    }
+    if (remoteAssistanceRequests === null) {
+        tbody.innerHTML = '<tr><td colspan="7" class="empty-table">The shared request inbox could not be loaded. Check the status message above and try again after correcting the issue.</td></tr>';
+        return;
+    }
+    const requests = (remoteAssistanceRequests || []).slice().sort((a, b) => String(b.submittedAt).localeCompare(String(a.submittedAt)));
     tbody.innerHTML = requests.map(request => {
         const submitted = request.submittedAt ? new Date(request.submittedAt).toLocaleString('en-PH') : '—';
         const actions = canReview
@@ -1093,57 +1169,87 @@ function renderAssistanceRequests() {
             : `<span class="badge badge-pending">${escapeHtml(request.status || 'Pending')}</span>`;
         return `<tr>
             <td>${escapeHtml(submitted)}</td>
-            <td>${escapeHtml(request.name)}</td>
+            <td>${escapeHtml(request.name || 'Not provided')}</td>
             <td>${escapeHtml(request.contact)}</td>
             <td>${escapeHtml(request.type)}</td>
             <td>${escapeHtml(request.quantity || '—')}</td>
-            <td>${escapeHtml(request.description)}${request.supportingInfo ? `<div class="muted-text">${escapeHtml(request.supportingInfo)}</div>` : ''}</td>
+            <td>${escapeHtml(request.description)}</td>
             <td>${actions}</td>
         </tr>`;
-    }).join('') || '<tr><td colspan="7" class="empty-table">No assistance requests have been submitted in this browser.</td></tr>';
+    }).join('') || '<tr><td colspan="7" class="empty-table">No assistance requests have been submitted.</td></tr>';
     tbody.querySelectorAll('[data-request-action]').forEach(button => {
         button.addEventListener('click', () => updateAssistanceRequest(Number(button.dataset.requestId), button.dataset.requestAction));
     });
     tbody.querySelectorAll('[data-request-edit]').forEach(button => button.addEventListener('click', () => {
         if (!canReview) return;
-        const records = getAssistanceRequests();
-        const request = records.find(item => Number(item.id) === Number(button.dataset.requestEdit));
+        const request = remoteAssistanceRequests?.find(item => Number(item.id) === Number(button.dataset.requestEdit));
         if (!request) return;
         const updated = promptRecordUpdate(request, [
-            { key: 'name', label: 'Requester name', required: true },
+            { key: 'name', label: 'Requester name' },
             { key: 'contact', label: 'Contact information', required: true },
             { key: 'type', label: 'Assistance type', required: true },
             { key: 'quantity', label: 'Quantity' },
-            { key: 'description', label: 'Description', required: true },
-            { key: 'supportingInfo', label: 'Supporting information' }
+            { key: 'description', label: 'Description', required: true }
         ]);
         if (!updated) return;
-        records[records.indexOf(request)] = updated;
-        try {
-            saveStoredList(ASSISTANCE_REQUEST_KEY, records);
-        } catch (error) {
-            console.error('Unable to update assistance request.', error);
-            window.alert('Unable to save this assistance request in browser storage.');
-            return;
-        }
-        logActivity(`Updated assistance request from ${updated.name}`);
-        renderAssistanceRequests();
+        void updateRemoteAssistanceRequest(request, {
+            requester_name: updated.name || null,
+            contact: updated.contact,
+            assistance_type: updated.type,
+            quantity: updated.quantity || null,
+            description: updated.description
+        }, `Updated assistance request from ${updated.name || 'requester'}`);
     }));
     tbody.querySelectorAll('[data-request-delete]').forEach(button => button.addEventListener('click', () => {
         if (!canReview) return;
-        const records = getAssistanceRequests();
-        const request = records.find(item => Number(item.id) === Number(button.dataset.requestDelete));
-        if (!request || !window.confirm(`Delete the assistance request from ${request.name}?`)) return;
-        try {
-            saveStoredList(ASSISTANCE_REQUEST_KEY, records.filter(item => item.id !== request.id));
-        } catch (error) {
-            console.error('Unable to delete assistance request.', error);
-            window.alert('Unable to delete this assistance request in browser storage.');
-            return;
-        }
-        logActivity(`Deleted assistance request from ${request.name}`);
-        renderAssistanceRequests();
+        const request = remoteAssistanceRequests?.find(item => Number(item.id) === Number(button.dataset.requestDelete));
+        if (!request || !window.confirm(`Delete the assistance request from ${request.name || 'this requester'}?`)) return;
+        void deleteRemoteAssistanceRequest(request);
     }));
+}
+
+async function updateRemoteAssistanceRequest(request, changes, activityMessage) {
+    try {
+        const { data, error } = await supabaseClient
+            .from('kbk_assistance_requests')
+            .update(changes)
+            .eq('id', request.id)
+            .select('id,requester_name,contact,assistance_type,quantity,description,status,submitted_at,reviewed_at')
+            .maybeSingle();
+        if (error) throw new Error(error.message);
+        if (!data) throw new Error('This request could not be found or you no longer have permission to update it.');
+        Object.assign(request, {
+            name: data.requester_name || '',
+            contact: data.contact,
+            type: data.assistance_type,
+            quantity: data.quantity || '',
+            description: data.description,
+            status: data.status,
+            submittedAt: data.submitted_at,
+            reviewedAt: data.reviewed_at
+        });
+        logActivity(activityMessage);
+        renderAssistanceRequests();
+    } catch (error) {
+        console.error('Unable to update assistance request.', error);
+        window.alert(`Unable to update this request in Supabase: ${error.message}`);
+    }
+}
+
+async function deleteRemoteAssistanceRequest(request) {
+    try {
+        const { error } = await supabaseClient
+            .from('kbk_assistance_requests')
+            .delete()
+            .eq('id', request.id);
+        if (error) throw new Error(error.message);
+        remoteAssistanceRequests = remoteAssistanceRequests.filter(item => item.id !== request.id);
+        logActivity(`Deleted assistance request ${request.id}`);
+        renderAssistanceRequests();
+    } catch (error) {
+        console.error('Unable to delete assistance request.', error);
+        window.alert(`Unable to delete this request from Supabase: ${error.message}`);
+    }
 }
 
 function handlePublicFeedbackSubmit(event) {
@@ -1555,21 +1661,28 @@ function initializePublicNavigation(nav) {
     mobileToggle.textContent = 'Menu';
 }
 
-function updateAssistanceRequest(id, status) {
+async function updateAssistanceRequest(id, status) {
     if (getUserRole() === 'staff' || !['Approved', 'Declined'].includes(status)) return;
-    const requests = getAssistanceRequests();
-    const request = requests.find(item => Number(item.id) === id && item.status === 'Pending');
+    const request = remoteAssistanceRequests?.find(item => Number(item.id) === Number(id) && item.status === 'Pending');
     if (!request) return;
-    request.status = status;
-    request.reviewedAt = new Date().toISOString();
     try {
-        saveStoredList(ASSISTANCE_REQUEST_KEY, requests);
+        const { data, error } = await supabaseClient
+            .from('kbk_assistance_requests')
+            .update({ status, reviewed_at: new Date().toISOString() })
+            .eq('id', request.id)
+            .eq('status', 'Pending')
+            .select('id,status,reviewed_at')
+            .maybeSingle();
+        if (error) throw new Error(error.message);
+        if (!data) throw new Error('This request is no longer pending or you no longer have permission to review it.');
+        request.status = data.status;
+        request.reviewedAt = data.reviewed_at;
     } catch (error) {
-        console.error('Unable to update assistance request.', error);
-        window.alert('Unable to save the request decision in browser storage.');
+        console.error('Unable to save the assistance request decision.', error);
+        window.alert(`Unable to save the request decision to Supabase: ${error.message}`);
         return;
     }
-    logActivity(`${status} assistance request ${id}`);
+    logActivity(`${status} assistance request ${request.id}`);
     renderAssistanceRequests();
 }
 
@@ -3472,6 +3585,28 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
         document.getElementById('reportGenerate')?.addEventListener('click', downloadReport);
         renderBeneficiaryTable();
+        const assistanceRequestStatus = document.getElementById('assistanceRequestStatus');
+        if (document.getElementById('assistanceRequestTableBody')) {
+            if (role === 'admin') {
+                try {
+                    await loadAdminAssistanceRequests();
+                    if (assistanceRequestStatus) {
+                        assistanceRequestStatus.dataset.error = 'false';
+                        assistanceRequestStatus.textContent = `${remoteAssistanceRequests.length} request${remoteAssistanceRequests.length === 1 ? '' : 's'} in the shared inbox.`;
+                    }
+                } catch (error) {
+                    console.error('Unable to load the shared assistance request inbox.', error);
+                    remoteAssistanceRequests = null;
+                    if (assistanceRequestStatus) {
+                        assistanceRequestStatus.dataset.error = 'true';
+                        assistanceRequestStatus.textContent = `The shared inbox could not be loaded: ${error.message}. Confirm the latest setup SQL has been run and try again.`;
+                    }
+                }
+            } else {
+                remoteAssistanceRequests = [];
+                if (assistanceRequestStatus) assistanceRequestStatus.textContent = 'Request details are restricted to active administrators.';
+            }
+        }
         renderAssistanceRequests();
         renderPublicFeedback();
         renderInventory();

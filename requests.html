@@ -17,7 +17,8 @@
         <main class="main-content">
             <section class="section-block">
                 <div class="page-header compact"><div><h1>Assistance Requests</h1><p>Review public assistance requests. Only authorized administrators can approve or decline requests.</p></div></div>
-                <p class="request-storage-note">Requests are stored in this browser only and are not synchronized across devices. Personal details are visible to signed-in administrators on this browser.</p>
+                <p class="request-storage-note">New public requests are stored in Supabase and visible only to active administrators. Requests submitted before the shared inbox was configured may remain in the browser storage on the device where they were submitted; review that device before clearing its browser data.</p>
+                <p class="request-admin-status" id="assistanceRequestStatus" role="status" aria-live="polite">Loading assistance requests…</p>
                 <div class="table-wrapper"><table><thead><tr><th>Submitted</th><th>Requester</th><th>Contact</th><th>Assistance</th><th>Quantity</th><th>Description / Supporting Information</th><th>Status / Review</th></tr></thead><tbody id="assistanceRequestTableBody"></tbody></table></div>
             </section>
             <section class="section-block">
