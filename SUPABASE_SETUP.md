@@ -15,7 +15,7 @@ This project is a static browser app. Supabase provides shared PostgreSQL storag
    ```
 
 5. Create each additional user in Supabase Authentication, then add their profile with role `staff` or `admin`. Roles are assigned only through trusted Supabase administration, never from the browser.
-6. Host this folder on an HTTP(S) web server and open `login.html`. All HTML pages load the local `supabase-config.js` before `script.js`; make sure it is present on the host. For deployed production use, configure Supabase Auth's allowed redirect URLs for the hosted site.
+6. For Vercel, set `SUPABASE_URL` to the HTTPS Supabase project URL and `SUPABASE_ANON_KEY` to the publishable/anon key in **Project Settings → Environment Variables** for Production (and Preview if needed), then deploy. `vercel.json` routes the existing `/supabase-config.js` request to `api/supabase-config.js`, which injects these public client settings at runtime. The endpoint deliberately rejects Supabase secret/service-role keys. For local hosting, create the ignored `supabase-config.js` from `supabase-config.example.js`. Configure Supabase Auth's allowed redirect URLs to include your deployed domain.
 
 ## Data and privacy
 
