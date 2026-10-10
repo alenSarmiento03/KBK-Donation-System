@@ -5,7 +5,7 @@ This project is a static browser app. Supabase provides shared PostgreSQL storag
 ## Configure the project
 
 1. Create a Supabase project and copy `supabase-config.example.js` to `supabase-config.js`.
-2. Put the Project URL (for example, `https://YOUR_PROJECT_ID.supabase.co`) and publishable/anon key into `supabase-config.js`. Use the project root URL only; do not add `/rest/v1/`. That local file is ignored by Git.
+2. Put the Project URL (for example, `https://YOUR_PROJECT_ID.supabase.co`) and the project's publishable/anon key into `supabase-config.js`. Use the project root URL only; do not add `/rest/v1/`. This static browser app serves that file publicly, as required for the Supabase client. The publishable/anon key is designed for public use; never put a secret or service-role key in this file. Database security must be enforced by Supabase Row Level Security policies.
 3. In Supabase SQL Editor, run `supabase-setup.sql`. If this project was already set up, run the updated file again to create the private shared assistance-request inbox and its row-level security policies.
 4. In Authentication, create the first user with the intended administrator email and a strong password. Copy that user's UUID, then run:
 
@@ -15,7 +15,7 @@ This project is a static browser app. Supabase provides shared PostgreSQL storag
    ```
 
 5. Create each additional user in Supabase Authentication, then add their profile with role `staff` or `admin`. Roles are assigned only through trusted Supabase administration, never from the browser.
-6. For Vercel, set `SUPABASE_URL` to the HTTPS Supabase project URL and `SUPABASE_ANON_KEY` to the publishable/anon key in **Project Settings → Environment Variables** for Production (and Preview if needed), then deploy. `vercel.json` routes the existing `/supabase-config.js` request to `api/supabase-config.js`, which injects these public client settings at runtime. The endpoint deliberately rejects Supabase secret/service-role keys. For local hosting, create the ignored `supabase-config.js` from `supabase-config.example.js`. Configure Supabase Auth's allowed redirect URLs to include your deployed domain.
+6. Deploy the repository to Vercel. Ensure `supabase-config.js` is included in the deployed Git commit; Vercel environment variables do not automatically populate a static JavaScript config file. After changing the config, commit and push the file to trigger a deployment. Configure Supabase Auth's allowed redirect URLs to include your deployed domain.
 
 ## Data and privacy
 
