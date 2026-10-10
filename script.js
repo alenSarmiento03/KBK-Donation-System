@@ -1762,7 +1762,7 @@ function renderSiteNavigation() {
         { label: 'Donations', links: [['Donation Records', 'donations.html', 'donations'], ['Donors', 'donors.html', 'donors']] },
         { label: 'Community', links: [['Requests', 'requests.html', 'requests'], ['Beneficiaries', 'beneficiaries.html', 'beneficiaries'], ['Projects & Campaigns', 'projects.html', 'projects']] },
         { label: 'Operations', links: [['Inventory', 'inventory.html', 'inventory'], ['Allocation & Distribution', 'allocations.html', 'allocations'], ['Expenses', 'expenses.html', 'expenses']] },
-        { label: 'Reports & Settings', links: [['Reports', 'reports.html', 'reports'], ['Transparency', 'admin-transparency.html', 'transparency'], ['Activity Log', 'accounts.html#activityLogBody', 'activity'], ['Users & Accounts', 'accounts.html', 'settings'], ['Settings', 'settings.html', 'settings']] }
+        { label: 'Reports & Settings', links: [['Reports', 'reports.html', 'reports'], ['Transparency', 'admin-transparency.html', 'transparency'], ['Activity Log', 'accounts.html#activityLogBody', 'activity'], ['Settings', 'settings.html', 'settings']] }
     ];
     const adminIcons = {
         dashboard: '<rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="5" rx="1"/><rect x="13" y="10" width="8" height="11" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/>',
