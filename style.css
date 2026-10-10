@@ -211,7 +211,22 @@ body {
 .public-request-form button[disabled] { cursor: wait; opacity: 0.7; }
 .request-form-message[data-error="true"] { color: #9b2c25; }
 .request-admin-status[data-error="true"] { border-color: #e6b6b3; background: #fff1f0; color: #842029; }
+.contact-page { padding: clamp(1.1rem, 3vw, 2rem); border: 1px solid var(--border); border-radius: var(--radius); background: rgba(255, 255, 255, 0.92); box-shadow: var(--shadow); }
+.contact-page-heading .section-title { font-size: clamp(1.5rem, 3vw, 2rem); }
+.contact-page-heading .transparency-intro { margin: 0 0 1.25rem; }
+.contact-details-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.9rem; margin: 1.25rem 0; }
+.contact-detail-card { min-width: 0; padding: 1rem; border: 1px solid var(--border); border-radius: 10px; background: #fff; }
+.contact-detail-card h2 { margin-bottom: 0.45rem; color: var(--primary-dark); font-size: 1rem; }
+.contact-detail-card p { margin-bottom: 0.7rem; color: var(--gray); font-size: 0.88rem; }
+.contact-email-link { overflow-wrap: anywhere; font-weight: 700; }
+.contact-message-section { margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--border); }
+.contact-message-section > .transparency-intro { margin: -0.5rem 0 1rem; }
+.contact-message-section .public-request-form { max-width: 760px; }
 .request-list-header { margin-top: 1.5rem; }
+
+@media (max-width: 700px) {
+    .contact-details-grid { grid-template-columns: 1fr; }
+}
 
 .leaderboard {
     background: rgba(255, 253, 245, 0.76);
@@ -663,6 +678,18 @@ body.sidebar-open .sidebar-backdrop {
     padding-bottom: 0.85rem;
     border-bottom: 1px solid var(--border);
 }
+.admin-page-guide {
+    margin: 1rem 0 1.5rem;
+    padding: 1rem 1.15rem;
+    border: 1px solid #d7e2d2;
+    border-left: 4px solid var(--primary);
+    border-radius: 10px;
+    background: #f7faf5;
+}
+.admin-page-guide h2 { margin-bottom: 0.3rem; color: var(--primary-dark); font-size: 1rem; }
+.admin-page-guide p { color: var(--gray); font-size: 0.88rem; }
+.admin-page-guide ul { display: grid; gap: 0.25rem; margin: 0.55rem 0 0; padding-left: 1.2rem; color: var(--dark); font-size: 0.84rem; }
+.admin-page-guide li { line-height: 1.5; }
 .admin-breadcrumb { display: flex; align-items: center; gap: 0.55rem; color: var(--gray); font-size: 0.82rem; }
 .admin-breadcrumb a { color: var(--primary-dark); font-weight: 650; text-decoration: none; }
 .admin-breadcrumb a:hover, .admin-context-logout:hover { text-decoration: underline; }

@@ -22,8 +22,9 @@
                 <div class="table-wrapper"><table><thead><tr><th>Submitted</th><th>Requester</th><th>Contact</th><th>Assistance</th><th>Quantity</th><th>Description / Supporting Information</th><th>Status / Review</th></tr></thead><tbody id="assistanceRequestTableBody"></tbody></table></div>
             </section>
             <section class="section-block">
-                <div class="page-header compact"><div><h2>Contact / Feedback Inbox</h2><p>Questions and feedback submitted from the public contact page.</p></div></div>
-                <div class="table-wrapper"><table><thead><tr><th>Submitted</th><th>Name</th><th>Contact</th><th>Subject</th><th>Message</th><th>Actions</th></tr></thead><tbody id="publicFeedbackTableBody"></tbody></table></div>
+                <div class="page-header compact"><div><h2>Contact / Feedback Inbox</h2><p>Messages sent from the public contact form. Only active administrators can read and manage them; new messages do not generate an email notification.</p></div></div>
+                <p class="request-admin-status" id="publicFeedbackStatus" role="status" aria-live="polite">Loading contact messages…</p>
+                <div class="table-wrapper"><table><thead><tr><th>Submitted</th><th>Name</th><th>Contact</th><th>Subject</th><th>Message</th><th>Status / Actions</th></tr></thead><tbody id="publicFeedbackTableBody"></tbody></table></div>
             </section>
         </main>
     </div>

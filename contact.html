@@ -10,21 +10,43 @@
 <body data-page="public">
     <nav class="navbar"><div class="navbar-container"><a href="index.html" class="navbar-brand"><div class="logo"><img src="photo.png/logo1.png" alt="KBK logo"></div><span class="brand-name">KBK Community Donation Tracking System</span></a><ul class="navbar-menu"></ul></div></nav>
     <main class="container">
-        <section class="public-assistance-request" aria-labelledby="contact-heading">
-            <h1 class="section-title" id="contact-heading">Contact / Feedback</h1>
-            <p class="transparency-intro">Send KBK a question or feedback. For urgent matters, contact us directly at <a href="mailto:ryealensarmiento@gmail.com">ryealensarmiento@gmail.com</a>.</p>
-            <p class="request-storage-note">This demo queues messages in this browser only. After submitting, use the email draft link to send your message to KBK. Browser submissions are not synchronized across devices.</p>
-            <form id="publicFeedbackForm" class="public-request-form">
-                <div class="form-row">
-                    <div class="form-group"><label for="feedbackName">Name</label><input class="form-control" id="feedbackName" type="text" maxlength="120" autocomplete="name" required></div>
-                    <div class="form-group"><label for="feedbackContact">Email or phone</label><input class="form-control" id="feedbackContact" type="text" maxlength="160" required></div>
-                </div>
-                <div class="form-group"><label for="feedbackSubject">Subject</label><input class="form-control" id="feedbackSubject" type="text" maxlength="160" required></div>
-                <div class="form-group"><label for="feedbackMessage">Question or feedback</label><textarea class="form-control" id="feedbackMessage" rows="5" maxlength="2000" required></textarea></div>
-                <button class="btn btn-primary" type="submit">Submit Message</button>
-                <a class="btn btn-outline" id="feedbackEmailDraft" hidden>Open email draft to send to KBK</a>
-                <p class="request-form-message" id="feedbackFormMessage" role="status" aria-live="polite"></p>
-            </form>
+        <section class="contact-page" aria-labelledby="contact-heading">
+            <header class="contact-page-heading">
+                <h1 class="section-title" id="contact-heading">Contact KBK</h1>
+                <p class="transparency-intro">Questions about donating, a donation you made, or KBK’s community programs? Choose the best way to get in touch below.</p>
+            </header>
+            <div class="contact-details-grid" aria-label="Contact information">
+                <article class="contact-detail-card">
+                    <h2>Email KBK</h2>
+                    <p>For general questions, feedback, or follow-up, email our listed contact address.</p>
+                    <a class="contact-email-link" href="mailto:ryealensarmiento@gmail.com">ryealensarmiento@gmail.com</a>
+                </article>
+                <article class="contact-detail-card">
+                    <h2>Request assistance</h2>
+                    <p>If you or your family need support, use the assistance request form. Submissions are reviewed by KBK; approval is not guaranteed.</p>
+                    <a class="public-text-link" href="assistance.html">Go to Request Assistance</a>
+                </article>
+                <article class="contact-detail-card">
+                    <h2>Donation questions</h2>
+                    <p>For a question about a donation, include its tracking code if you have one. Never send passwords, payment-card details, or bank account information.</p>
+                    <a class="public-text-link" href="track-donation.html">Track a Donation</a>
+                </article>
+            </div>
+            <p class="request-storage-note">Please share only the information needed to answer your question. Messages are delivered to KBK’s shared admin inbox, where only active administrators can read them; this form does not send an email notification. Do not include passwords, financial account details, or sensitive personal or medical information. There is no automatic deletion schedule yet; email KBK if you want your message deleted.</p>
+            <section class="contact-message-section" aria-labelledby="contact-form-heading">
+                <h2 class="section-title" id="contact-form-heading">Prepare a message</h2>
+                <p class="transparency-intro">Include a clear subject and a way for KBK to reply. There is no guaranteed response time; for urgent matters, email KBK directly.</p>
+                <form id="publicFeedbackForm" class="public-request-form">
+                    <div class="form-row">
+                        <div class="form-group"><label for="feedbackName">Name <span class="field-optional">(optional)</span></label><input class="form-control" id="feedbackName" type="text" maxlength="120" autocomplete="name"></div>
+                        <div class="form-group"><label for="feedbackContact">Email or phone number</label><input class="form-control" id="feedbackContact" type="text" maxlength="160" autocomplete="on" placeholder="name@example.com or phone number" required></div>
+                    </div>
+                    <div class="form-group"><label for="feedbackSubject">Subject</label><input class="form-control" id="feedbackSubject" type="text" maxlength="160" placeholder="e.g. Donation question" required></div>
+                    <div class="form-group"><label for="feedbackMessage">Question or feedback</label><textarea class="form-control" id="feedbackMessage" rows="5" minlength="10" maxlength="2000" placeholder="Tell us what you need help with. Include a donation tracking code if relevant." required></textarea></div>
+                    <button class="btn btn-primary" type="submit">Send Message</button>
+                    <p class="request-form-message" id="feedbackFormMessage" role="status" aria-live="polite"></p>
+                </form>
+            </section>
         </section>
     </main>
     <footer class="footer"><p>© 2026 KBK Community Donation Tracking System — Transparency. Accountability. Community.</p></footer>

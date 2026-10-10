@@ -30,6 +30,7 @@ const remoteRevisions = new Map();
 let publicUniqueDonorCount = null;
 let publicBeneficiariesHelped = null;
 let remoteAssistanceRequests = null;
+let remoteFeedbackMessages = null;
 
 function showSystemStatus(message, isError = false) {
     let status = document.getElementById('kbkSystemStatus');
@@ -175,6 +176,26 @@ async function loadAdminAssistanceRequests() {
         status: request.status,
         submittedAt: request.submitted_at,
         reviewedAt: request.reviewed_at
+    }));
+}
+
+async function loadAdminFeedbackMessages() {
+    if (!supabaseClient || !supabaseUser || getUserRole() !== 'admin') {
+        throw new Error('A signed-in KBK administrator is required to load contact messages.');
+    }
+    const { data, error } = await supabaseClient
+        .from('kbk_public_feedback_messages')
+        .select('id,requester_name,contact,subject,message,status,submitted_at')
+        .order('submitted_at', { ascending: false });
+    if (error) throw new Error(error.message);
+    remoteFeedbackMessages = data.map(item => ({
+        id: item.id,
+        name: item.requester_name || '',
+        contact: item.contact,
+        subject: item.subject,
+        message: item.message,
+        status: item.status,
+        submittedAt: item.submitted_at
     }));
 }
 
@@ -794,6 +815,9 @@ function renderPublicPage() {
     renderPublicDistributions();
     renderPublicProjects();
     renderPublicNews();
+    document.querySelectorAll('.public-dashboard-page [aria-busy="true"]').forEach(container => {
+        container.setAttribute('aria-busy', 'false');
+    });
 }
 
 function publicCampaignProgressMarkup(project, donations) {
@@ -1142,7 +1166,7 @@ async function submitPublicAssistanceRequest(event) {
     } catch (error) {
         console.error('Unable to submit assistance request.', error);
         message.dataset.error = 'true';
-        message.textContent = 'Your request could not be sent. Please try again later or contact KBK by email. No request was saved in this browser.';
+        message.textContent = 'We could not confirm that your request was sent. Contact KBK before resubmitting to avoid a duplicate request.';
     } finally {
         submitButton.disabled = false;
         form.removeAttribute('aria-busy');
@@ -1253,93 +1277,131 @@ async function deleteRemoteAssistanceRequest(request) {
 }
 
 function handlePublicFeedbackSubmit(event) {
+    void submitPublicFeedback(event);
+}
+
+async function submitPublicFeedback(event) {
     event.preventDefault();
     const form = event.currentTarget;
     const status = document.getElementById('feedbackFormMessage');
+    const submitButton = form.querySelector('button[type="submit"]');
+    const contactInput = document.getElementById('feedbackContact');
+    const contact = contactInput.value.trim();
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const phonePattern = /^\+?[\d\s().-]{7,20}$/;
+    const phoneDigits = contact.replace(/\D/g, '');
+    contactInput.setCustomValidity(
+        emailPattern.test(contact) || (phonePattern.test(contact) && phoneDigits.length >= 7 && phoneDigits.length <= 15)
+            ? ''
+            : 'Enter a valid email address or phone number.'
+    );
+    status.dataset.error = 'false';
+    if (!form.reportValidity()) return;
+
     const entry = {
-        id: Date.now(),
         name: document.getElementById('feedbackName').value.trim(),
-        contact: document.getElementById('feedbackContact').value.trim(),
+        contact,
         subject: document.getElementById('feedbackSubject').value.trim(),
-        message: document.getElementById('feedbackMessage').value.trim(),
-        submittedAt: new Date().toISOString(),
-        status: 'New'
+        message: document.getElementById('feedbackMessage').value.trim()
     };
-    if (!entry.name || !entry.contact || !entry.subject || !entry.message) {
-        status.textContent = 'Complete all required fields before submitting.';
+    if (!entry.contact || !entry.subject || entry.subject.length > 160
+        || entry.message.length < 10 || entry.message.length > 2000) {
+        status.dataset.error = 'true';
+        status.textContent = 'Enter a valid contact method, a subject, and a message between 10 and 2,000 characters.';
         return;
     }
+    if (!supabaseClient || supabaseInitializationError) {
+        status.dataset.error = 'true';
+        status.textContent = `Online message delivery is not available. Please email KBK directly at ${KBK_CONTACT_EMAIL}.`;
+        return;
+    }
+
+    submitButton.disabled = true;
+    form.setAttribute('aria-busy', 'true');
+    status.textContent = 'Sending your message securely…';
     try {
-        const feedback = getPublicFeedback();
-        entry.id = nextId(feedback);
-        feedback.push(entry);
-        saveStoredList(FEEDBACK_KEY, feedback);
+        const { error } = await supabaseClient.from('kbk_public_feedback_messages').insert({
+            requester_name: entry.name || null,
+            contact: entry.contact,
+            subject: entry.subject,
+            message: entry.message
+        });
+        if (error) throw new Error(error.message);
+        form.reset();
+        status.dataset.error = 'false';
+        status.textContent = 'Your message was delivered to KBK’s shared admin inbox. This does not send an email notification.';
     } catch (error) {
-        console.error('Unable to save public feedback.', error);
-        status.textContent = 'Your message could not be saved in this browser. Please contact KBK by email.';
-        return;
+        console.error('Unable to send public feedback.', error);
+        status.dataset.error = 'true';
+        status.textContent = `We could not confirm delivery. Please email KBK directly at ${KBK_CONTACT_EMAIL} before resubmitting to avoid a duplicate.`;
+    } finally {
+        submitButton.disabled = false;
+        form.removeAttribute('aria-busy');
     }
-    form.reset();
-    status.textContent = 'Your message has been saved for KBK review in this browser. For urgent matters, use the email link on this page.';
-    const emailDraft = document.getElementById('feedbackEmailDraft');
-    if (emailDraft) {
-        const subject = encodeURIComponent(`[KBK Feedback] ${entry.subject}`);
-        const body = encodeURIComponent(`From: ${entry.name}\nContact: ${entry.contact}\n\n${entry.message}`);
-        emailDraft.href = `mailto:${KBK_CONTACT_EMAIL}?subject=${subject}&body=${body}`;
-        emailDraft.hidden = false;
-    }
-    renderPublicFeedback();
 }
 
 function renderPublicFeedback() {
     const tbody = document.getElementById('publicFeedbackTableBody');
     if (!tbody) return;
-    const rows = getPublicFeedback().sort((a, b) => String(b.submittedAt).localeCompare(String(a.submittedAt)));
-    const canManage = getUserRole() !== 'staff';
+    if (getUserRole() !== 'admin') {
+        tbody.innerHTML = '<tr><td colspan="6" class="empty-table">Only active administrators can view contact messages.</td></tr>';
+        return;
+    }
+    if (remoteFeedbackMessages === null) {
+        tbody.innerHTML = '<tr><td colspan="6" class="empty-table">The shared contact inbox could not be loaded. Check the status message above and confirm the latest database setup has been applied.</td></tr>';
+        return;
+    }
+    const rows = remoteFeedbackMessages.slice().sort((a, b) => String(b.submittedAt).localeCompare(String(a.submittedAt)));
     tbody.innerHTML = rows.map(item => `<tr>
         <td>${escapeHtml(item.submittedAt ? new Date(item.submittedAt).toLocaleString('en-PH') : '—')}</td>
-        <td>${escapeHtml(item.name)}</td><td>${escapeHtml(item.contact)}</td>
+        <td>${escapeHtml(item.name || 'Not provided')}</td><td>${escapeHtml(item.contact)}</td>
         <td>${escapeHtml(item.subject)}</td><td>${escapeHtml(item.message)}</td>
-        <td>${canManage ? `<div class="action-group"><button class="btn btn-outline btn-xs" type="button" data-feedback-edit="${Number(item.id)}">Edit</button><button class="btn btn-danger btn-xs" type="button" data-feedback-delete="${Number(item.id)}">Delete</button></div>` : 'View only'}</td>
-    </tr>`).join('') || '<tr><td colspan="6" class="empty-table">No public feedback has been submitted in this browser.</td></tr>';
-    tbody.querySelectorAll('[data-feedback-edit]').forEach(button => button.addEventListener('click', () => {
-        if (!canManage) return;
-        const records = getPublicFeedback();
-        const item = records.find(record => Number(record.id) === Number(button.dataset.feedbackEdit));
-        if (!item) return;
-        const updated = promptRecordUpdate(item, [
-            { key: 'name', label: 'Name', required: true },
-            { key: 'contact', label: 'Contact information', required: true },
-            { key: 'subject', label: 'Subject', required: true },
-            { key: 'message', label: 'Message', required: true }
-        ]);
-        if (!updated) return;
-        records[records.indexOf(item)] = updated;
-        try {
-            saveStoredList(FEEDBACK_KEY, records);
-        } catch (error) {
-            console.error('Unable to update public feedback.', error);
-            window.alert('Unable to save this feedback in browser storage.');
-            return;
-        }
-        logActivity(`Updated public feedback from ${updated.name}`);
-        renderPublicFeedback();
+        <td><div class="action-group"><span class="badge ${item.status === 'Reviewed' ? 'badge-success' : 'badge-pending'}">${escapeHtml(item.status)}</span>${item.status === 'New' ? `<button class="btn btn-outline btn-xs" type="button" data-feedback-reviewed="${Number(item.id)}">Mark reviewed</button>` : ''}<button class="btn btn-danger btn-xs" type="button" data-feedback-delete="${Number(item.id)}">Delete</button></div></td>
+    </tr>`).join('') || '<tr><td colspan="6" class="empty-table">No contact messages have been received.</td></tr>';
+    tbody.querySelectorAll('[data-feedback-reviewed]').forEach(button => button.addEventListener('click', () => {
+        void updateRemoteFeedbackMessage(Number(button.dataset.feedbackReviewed), { status: 'Reviewed' });
     }));
     tbody.querySelectorAll('[data-feedback-delete]').forEach(button => button.addEventListener('click', () => {
-        if (!canManage) return;
-        const records = getPublicFeedback();
-        const item = records.find(record => Number(record.id) === Number(button.dataset.feedbackDelete));
-        if (!item || !window.confirm(`Delete feedback from ${item.name}?`)) return;
-        try {
-            saveStoredList(FEEDBACK_KEY, records.filter(record => record.id !== item.id));
-        } catch (error) {
-            console.error('Unable to delete public feedback.', error);
-            window.alert('Unable to delete this feedback in browser storage.');
-            return;
-        }
-        logActivity(`Deleted public feedback from ${item.name}`);
-        renderPublicFeedback();
+        const item = remoteFeedbackMessages.find(record => Number(record.id) === Number(button.dataset.feedbackDelete));
+        if (!item || !window.confirm(`Permanently delete the message “${item.subject}”?`)) return;
+        void deleteRemoteFeedbackMessage(item);
     }));
+}
+
+async function updateRemoteFeedbackMessage(id, changes) {
+    try {
+        const { data, error } = await supabaseClient
+            .from('kbk_public_feedback_messages')
+            .update(changes)
+            .eq('id', id)
+            .select('id,status')
+            .maybeSingle();
+        if (error) throw new Error(error.message);
+        if (!data) throw new Error('This message could not be found or you no longer have permission to update it.');
+        const item = remoteFeedbackMessages.find(record => Number(record.id) === Number(id));
+        if (item) item.status = data.status;
+        logActivity(`Reviewed public feedback ${id}`);
+        renderPublicFeedback();
+    } catch (error) {
+        console.error('Unable to update public feedback status.', error);
+        window.alert(`Unable to update the contact message: ${error.message}`);
+    }
+}
+
+async function deleteRemoteFeedbackMessage(item) {
+    try {
+        const { error } = await supabaseClient
+            .from('kbk_public_feedback_messages')
+            .delete()
+            .eq('id', item.id);
+        if (error) throw new Error(error.message);
+        remoteFeedbackMessages = remoteFeedbackMessages.filter(record => record.id !== item.id);
+        logActivity(`Deleted public feedback ${item.id}`);
+        renderPublicFeedback();
+    } catch (error) {
+        console.error('Unable to delete public feedback.', error);
+        window.alert(`Unable to delete the contact message: ${error.message}`);
+    }
 }
 
 function renderInventory() {
@@ -1569,6 +1631,147 @@ function insertAdminPageChrome(section) {
             <a class="admin-context-logout" href="login.html?loggedOut=1">Logout</a>
         </div>`;
     main.prepend(contextBar);
+}
+
+function insertAdminPageGuide() {
+    const main = document.querySelector('.main-content');
+    if (!main || main.querySelector('.admin-page-guide')) return;
+
+    const guides = {
+        'dashboard.html': {
+            summary: 'Use the overview to spot records that need attention and jump to the right workflow.',
+            tips: [
+                'Review donations awaiting verification before using funds in allocations.',
+                'Use the recent activity list to check what changed and who recorded it.'
+            ]
+        },
+        'donations.html': {
+            summary: 'Record incoming cash and item donations, verify them, and keep each donor’s history connected.',
+            tips: [
+                'Search for an existing donor before creating a new profile to avoid duplicates.',
+                'Verify a donation only after checking its details and any supporting receipt.',
+                'Use the status filter to review pending, verified, allocated, distributed, completed, or rejected records.'
+            ]
+        },
+        'donors.html': {
+            summary: 'Maintain donor contact profiles and review contributions associated with each donor.',
+            tips: [
+                'Search before adding a profile so contributions remain attached to one donor record.',
+                'Keep contact information current and use the donor profile to check contribution history.'
+            ]
+        },
+        'requests.html': {
+            summary: 'Review public assistance requests and messages submitted through the contact form.',
+            tips: [
+                'Assistance request details come from the shared Supabase inbox; only active admins can manage them.',
+                'Approve or decline requests after review, and delete sensitive request details when no longer needed.',
+                'Contact messages are delivered to the shared inbox; mark them reviewed after follow-up and delete them when no longer needed.',
+                'Messages submitted before this inbox was enabled may still exist only in the browser where they were prepared.'
+            ]
+        },
+        'beneficiaries.html': {
+            summary: 'Maintain recipient records and a history of assistance provided by KBK.',
+            tips: [
+                'Search for an existing person before adding a record to reduce duplicates.',
+                'Treat names, contact details, and assistance history as confidential; enter only information needed for service delivery.'
+            ]
+        },
+        'projects.html': {
+            summary: 'Create and maintain projects that connect donations, budgets, beneficiaries, and distributions.',
+            tips: [
+                'Use clear project names and descriptions so staff and donors can understand the purpose.',
+                'Keep project status and budget accurate; active projects can appear on the public campaign page.',
+                'Link relevant donation and distribution records to the correct project.'
+            ]
+        },
+        'inventory.html': {
+            summary: 'Track item stock and manage which current needs are displayed publicly.',
+            tips: [
+                'Update stock after receiving or distributing items so need levels stay accurate.',
+                'Show a public need only when its item and target quantity have been confirmed.',
+                'Mark urgent needs only when they genuinely require priority.'
+            ]
+        },
+        'allocations.html': {
+            summary: 'Assign verified cash donations to a project or purpose and review recorded allocations.',
+            tips: [
+                'Confirm the donation is verified before allocating its funds.',
+                'Check the remaining unallocated amount to avoid allocating more than was received.',
+                'Record a specific purpose and date so the allocation can be traced later.'
+            ]
+        },
+        'distributions.html': {
+            summary: 'Record items or support delivered to beneficiaries and confirm distribution outcomes.',
+            tips: [
+                'Record the project, beneficiary, item or amount, quantity, and delivery date.',
+                'Mark a distribution complete only after delivery; record confirmation when available.',
+                'Public summaries omit recipient names, but keep administrator records confidential.'
+            ]
+        },
+        'expenses.html': {
+            summary: 'Record project expenses and verify them after checking receipts or references.',
+            tips: [
+                'Link each expense to the correct project and keep a useful description and reference.',
+                'Verify an expense only after reviewing its supporting evidence.',
+                'Only verified expenses are included in public transparency summaries.'
+            ]
+        },
+        'reports.html': {
+            summary: 'Generate and download CSV reports for a selected record type and reporting period.',
+            tips: [
+                'Choose the report type and check the date range before generating the CSV.',
+                'Review exported files before sharing; reports may contain personal or operational information.',
+                'Store downloaded reports in an access-controlled location.'
+            ]
+        },
+        'admin-transparency.html': {
+            summary: 'Preview aggregate donation, allocation, and expense figures shown on the public transparency page.',
+            tips: [
+                'Check that linked donations, allocations, and verified expenses are recorded consistently.',
+                'Use the public view link to see the same summaries visitors can access.',
+                'Public summaries exclude private recipient and donor contact information.'
+            ]
+        },
+        'accounts.html': {
+            summary: 'Review account guidance, import reviewed legacy data, and inspect the activity log.',
+            tips: [
+                'Create accounts and assign roles through Supabase Authentication and protected profiles, not this page.',
+                'Review the local backup before importing; an import replaces matching shared record lists.',
+                'Check the activity log when auditing recent administrative changes.'
+            ]
+        },
+        'settings.html': {
+            summary: 'Check the signed-in account, access role, locally cached shared records, and configuration links.',
+            tips: [
+                'Record counts describe data currently available in this browser and are not a backup status.',
+                'Manage user credentials and roles through the linked account administration workflow.',
+                'Use the public transparency link to review the visitor-facing data.'
+            ]
+        }
+    };
+    const page = location.pathname.split('/').pop()?.toLowerCase() || 'dashboard.html';
+    const guideContent = guides[page];
+    if (!guideContent) return;
+
+    const guide = document.createElement('aside');
+    guide.className = 'admin-page-guide';
+    guide.setAttribute('aria-labelledby', 'admin-page-guide-title');
+    const heading = document.createElement('h2');
+    heading.id = 'admin-page-guide-title';
+    heading.textContent = 'How to use this page';
+    const summary = document.createElement('p');
+    summary.textContent = guideContent.summary;
+    const tips = document.createElement('ul');
+    guideContent.tips.forEach(tip => {
+        const item = document.createElement('li');
+        item.textContent = tip;
+        tips.append(item);
+    });
+    guide.append(heading, summary, tips);
+
+    const pageHeader = main.querySelector('.page-header');
+    if (pageHeader) pageHeader.after(guide);
+    else main.prepend(guide);
 }
 
 function renderPublicPageLayout(publicMenu) {
@@ -3521,6 +3724,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const role = getUserRole();
         const section = document.body.dataset.section || 'Dashboard';
         insertAdminPageChrome(section);
+        insertAdminPageGuide();
         if (role === 'admin') migrateDonationDonorLinks();
         const welcome = document.querySelector('.page-header h1');
         if (welcome) {
@@ -3586,6 +3790,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('reportGenerate')?.addEventListener('click', downloadReport);
         renderBeneficiaryTable();
         const assistanceRequestStatus = document.getElementById('assistanceRequestStatus');
+        const publicFeedbackStatus = document.getElementById('publicFeedbackStatus');
         if (document.getElementById('assistanceRequestTableBody')) {
             if (role === 'admin') {
                 try {
@@ -3605,6 +3810,27 @@ document.addEventListener('DOMContentLoaded', async () => {
             } else {
                 remoteAssistanceRequests = [];
                 if (assistanceRequestStatus) assistanceRequestStatus.textContent = 'Request details are restricted to active administrators.';
+            }
+        }
+        if (document.getElementById('publicFeedbackTableBody')) {
+            if (role === 'admin') {
+                try {
+                    await loadAdminFeedbackMessages();
+                    if (publicFeedbackStatus) {
+                        publicFeedbackStatus.dataset.error = 'false';
+                        publicFeedbackStatus.textContent = `${remoteFeedbackMessages.length} message${remoteFeedbackMessages.length === 1 ? '' : 's'} in the shared inbox.`;
+                    }
+                } catch (error) {
+                    console.error('Unable to load the shared contact inbox.', error);
+                    remoteFeedbackMessages = null;
+                    if (publicFeedbackStatus) {
+                        publicFeedbackStatus.dataset.error = 'true';
+                        publicFeedbackStatus.textContent = `The contact inbox could not be loaded: ${error.message}. Confirm the latest database setup has been applied and try again.`;
+                    }
+                }
+            } else {
+                remoteFeedbackMessages = [];
+                if (publicFeedbackStatus) publicFeedbackStatus.textContent = 'Contact message details are restricted to active administrators.';
             }
         }
         renderAssistanceRequests();
