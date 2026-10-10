@@ -15,16 +15,21 @@
         </ul>
     </aside><main class="main-content">
         <section class="section-block">
-            <div class="page-header compact"><div><h1>Reports</h1><p>Choose a report and optional date range to download donation, donor, beneficiary, inventory, distribution, expense, or project information.</p></div></div>
+            <div class="page-header compact"><div><h1>Reports</h1><p>Download a single report or one combined CSV of core donation-system records. Choose a date range to narrow time-based records.</p></div></div>
             <div class="report-controls">
                 <div class="form-group"><label for="reportType">Report Type</label><select id="reportType" class="form-control">
-                    <option value="donations">Donation Report</option><option value="donors">Donor Report</option><option value="beneficiaries">Beneficiary Report</option><option value="inventory">Inventory Report</option><option value="distributions">Distribution Report</option><option value="expenses">Expense Report</option><option value="projects">Project Report</option><option value="monthly">Monthly Report</option><option value="annual">Annual Report</option>
+                    <option value="all">All Records (CSV)</option><option value="donations">Donation Report</option><option value="donors">Donor Report</option><option value="beneficiaries">Beneficiary Report</option><option value="inventory">Inventory Report</option><option value="distributions">Distribution Report</option><option value="expenses">Expense Report</option><option value="projects">Project Report</option><option value="monthly">Monthly Summary</option><option value="annual">Annual Summary</option>
                 </select></div>
-                <div class="form-group"><label for="reportFrom">From Date (optional)</label><input id="reportFrom" class="form-control" type="date"></div>
-                <div class="form-group"><label for="reportTo">To Date (optional)</label><input id="reportTo" class="form-control" type="date"></div>
+                <div class="form-group"><label for="reportFrom">From Date <span class="muted-text">(optional)</span></label><input id="reportFrom" class="form-control" type="date"></div>
+                <div class="form-group"><label for="reportTo">To Date <span class="muted-text">(optional)</span></label><input id="reportTo" class="form-control" type="date"></div>
                 <div class="report-action"><button id="reportGenerate" class="btn btn-primary" type="button">Download Report</button></div>
             </div>
-            <p id="reportMessage" class="report-message" role="status">Your report downloads as a CSV file that you can open in spreadsheet software.</p>
+            <div id="reportPreview" class="report-preview" aria-live="polite">
+                <strong id="reportPreviewCount">Preparing report preview…</strong>
+                <span id="reportPreviewDetails">Change the report type or dates to update the preview.</span>
+            </div>
+            <p class="report-privacy-note"><strong>Privacy reminder:</strong> Reports can include donor or beneficiary contact details. Public assistance and contact inbox submissions are not included. Share downloaded files only with authorized people and delete copies when no longer needed.</p>
+            <p id="reportMessage" class="report-message" role="status">Choose a report type to preview the records before downloading a CSV file.</p>
         </section>
     </main></div><script src="supabase-config.js"></script>
 <script src="script.js"></script>

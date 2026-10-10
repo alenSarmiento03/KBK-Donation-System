@@ -1903,11 +1903,11 @@ function insertAdminPageGuide() {
             ]
         },
         'reports.html': {
-            summary: 'Choose a report type and date range, then download the records as a spreadsheet-friendly CSV file.',
+            summary: 'Preview the number of matching records, then download one report or all record types as a spreadsheet-friendly CSV file.',
             tips: [
-                'Choose the report type and check the date range before downloading the report.',
-                'Review exported files before sharing; reports may contain personal or operational information.',
-                'Store downloaded reports in an access-controlled location.'
+                'Date ranges filter records with dates; undated project and beneficiary profiles remain included.',
+                'All Records combines donation, donor, beneficiary, distribution, expense, and project records in one CSV; private public-inbox submissions are excluded.',
+                'Exports can include personal contact details. Share them only with authorized people and store them securely.'
             ]
         },
         'admin-transparency.html': {
@@ -3722,14 +3722,7 @@ function handleExpenseSubmit(event) {
 }
 
 /* ---------- REPORTS ---------- */
-function downloadReport() {
-    const type = document.getElementById('reportType').value;
-    const from = document.getElementById('reportFrom').value;
-    const to = document.getElementById('reportTo').value;
-    if (from && to && from > to) {
-        setText('reportMessage', 'The start date must be on or before the end date.');
-        return;
-    }
+function buildReportData(type, from, to) {
     const inRange = date => (!from || date >= from) && (!to || date <= to);
     const donations = getDonations();
     const donors = getDonors();
@@ -3737,63 +3730,270 @@ function downloadReport() {
     const projects = getProjects();
     const distributions = getDistributions();
     const expenses = getExpenses();
-    let headers;
-    let rows;
-    if (type === 'donations') {
-        headers = ['Donation ID', 'Donor', 'Type', 'Amount', 'Item', 'Quantity', 'Unit', 'Date', 'Purpose', 'Status'];
-        rows = donations.filter(x => inRange(x.date)).map(x => [donationReference(x.id), getDonationDonorName(x), x.type, x.amount, x.item, x.quantity ?? '', x.unit || '', x.date, x.category, x.status]);
-    } else if (type === 'donors') {
-        headers = ['Name', 'Type', 'Email', 'Phone', 'Organization', 'Status', 'Last Donation'];
-        rows = donors.map(x => [x.name, x.type, x.email, x.phone, x.organization, x.status, x.lastDonation]);
-    } else if (type === 'beneficiaries') {
-        headers = ['Name', 'Type', 'Contact', 'Location', 'Assistance Records'];
-        rows = beneficiaries.map(x => [x.name, x.type, x.contact, x.location, x.assistance.length]);
-    } else if (type === 'inventory') {
-        headers = ['Donation ID', 'Donor', 'Item', 'Quantity', 'Unit', 'Date', 'Status'];
-        rows = donations.filter(x => x.type === 'in-kind' && inRange(x.date)).map(x => [donationReference(x.id), getDonationDonorName(x), x.item, x.quantity ?? '', x.unit || '', x.date, x.status]);
-    } else if (type === 'distributions') {
-        headers = ['Distribution ID', 'Project', 'Beneficiary', 'Item / Amount', 'Quantity', 'Date', 'Confirmed', 'Status'];
-        rows = distributions.filter(x => inRange(x.date)).map(x => [x.id, projects.find(p => p.id === Number(x.projectId))?.name, beneficiaries.find(b => b.id === Number(x.beneficiaryId))?.name || x.beneficiaryName, x.itemAmount, x.quantity, x.date, x.confirmed, x.status]);
-    } else if (type === 'expenses') {
-        headers = ['Description', 'Amount', 'Date', 'Project', 'Category', 'Reference'];
-        rows = expenses.filter(x => inRange(x.date)).map(x => [x.description, x.amount, x.date, projects.find(p => p.id === Number(x.projectId))?.name, x.category, x.reference]);
-    } else if (type === 'projects') {
-        headers = ['Project', 'Budget', 'Donations', 'Expenses', 'Beneficiaries', 'Distributions', 'Status'];
-        rows = projects.map(x => [
-            x.name, x.budget,
-            donations.filter(d => Number(d.projectId) === x.id).reduce((sum, d) => sum + Number(d.amount || 0), 0),
-            expenses.filter(e => Number(e.projectId) === x.id).reduce((sum, e) => sum + Number(e.amount || 0), 0),
-            new Set(distributions.filter(d => Number(d.projectId) === x.id).map(d => d.beneficiaryId)).size,
-            distributions.filter(d => Number(d.projectId) === x.id).length, x.status
-        ]);
-    } else {
-        headers = [type === 'annual' ? 'Year' : 'Month', 'Donation Count', 'Cash Received', 'Expenses'];
-        const periods = new Map();
-        donations.filter(x => inRange(x.date)).forEach(x => {
-            const key = type === 'annual' ? x.date.slice(0, 4) : x.date.slice(0, 7);
-            if (!periods.has(key)) periods.set(key, { donations: 0, cash: 0, expenses: 0 });
-            const period = periods.get(key);
-            period.donations += 1;
-            if (x.type === 'cash') period.cash += Number(x.amount || 0);
-        });
-        expenses.filter(x => inRange(x.date)).forEach(x => {
-            const key = type === 'annual' ? x.date.slice(0, 4) : x.date.slice(0, 7);
-            if (!periods.has(key)) periods.set(key, { donations: 0, cash: 0, expenses: 0 });
-            periods.get(key).expenses += Number(x.amount || 0);
-        });
-        rows = [...periods.entries()].sort((a, b) => a[0].localeCompare(b[0])).map(([month, data]) => [month, data.donations, data.cash, data.expenses]);
+    const projectName = id => projects.find(project => Number(project.id) === Number(id))?.name || '';
+    const beneficiaryName = distribution =>
+        beneficiaries.find(beneficiary => Number(beneficiary.id) === Number(distribution.beneficiaryId))?.name
+        || distribution.beneficiaryName || '';
+
+    if (type === 'all') {
+        const headers = [
+            'Record Type', 'Record ID', 'Name / Description', 'Related Person', 'Project',
+            'Category', 'Type', 'Amount / Budget', 'Item / Details', 'Quantity', 'Unit',
+            'Date', 'Status', 'Contact', 'Location', 'Additional Details'
+        ];
+        const rows = [
+            ...donations.filter(record => inRange(record.date)).map(record => [
+                'Donation', donationReference(record.id), getDonationDonorName(record), '', projectName(record.projectId),
+                record.category, record.type === 'cash' ? 'Cash' : 'In-kind',
+                record.type === 'cash' ? record.amount : '', record.type === 'in-kind' ? record.item : '',
+                record.quantity ?? '', record.unit || '', record.date, normalizeDonationStatus(record.status),
+                '', '', record.type === 'in-kind' ? formatInKindDonation(record) : ''
+            ]),
+            ...donors.filter(record => !record.lastDonation || inRange(record.lastDonation)).map(record => [
+                'Donor', record.id ?? '', record.name, '', record.organization || '', '',
+                record.type, '', '', '', '', record.lastDonation || '', record.status,
+                [record.email, record.phone].filter(Boolean).join(' | '), '', ''
+            ]),
+            ...beneficiaries.map(record => [
+                'Beneficiary', record.id ?? '', record.name, '', '', '', record.type, '', '',
+                '', '', '', '', record.contact, record.location,
+                `${(record.assistance || []).length} assistance record(s)`
+            ]),
+            ...distributions.filter(record => inRange(record.date)).map(record => [
+                'Distribution', record.id ?? '', record.itemAmount || 'Distribution', beneficiaryName(record),
+                projectName(record.projectId), '', record.category || '', record.amount ?? '',
+                record.itemAmount || '', record.quantity ?? '', record.unit || '', record.date || '',
+                record.status || '', '', '', `Confirmed: ${record.confirmed === true ? 'Yes' : 'No'}`
+            ]),
+            ...expenses.filter(record => inRange(record.date)).map(record => [
+                'Expense', record.id ?? '', record.description, '', projectName(record.projectId),
+                record.category, '', record.amount, '', '', '', record.date, record.verified ? 'Verified' : 'Pending',
+                '', '', record.reference || ''
+            ]),
+            ...projects.map(record => {
+                const projectDonations = donations.filter(donation =>
+                    Number(donation.projectId) === Number(record.id) && inRange(donation.date)
+                );
+                const projectExpenses = expenses.filter(expense =>
+                    Number(expense.projectId) === Number(record.id) && inRange(expense.date)
+                );
+                const cashReceived = projectDonations
+                    .filter(donation => donation.type === 'cash'
+                        && ['verified', 'allocated', 'distributed', 'completed'].includes(normalizeDonationStatus(donation.status)))
+                    .reduce((sum, donation) => sum + Number(donation.amount || 0), 0);
+                return [
+                    'Project', record.id ?? '', record.name, '', '', '', '', record.budget ?? '',
+                    record.description || '', '', '', '', record.status || '', '', '',
+                    `Verified cash received in range: ${peso(cashReceived)}; Expense records in range: ${projectExpenses.length}`
+                ];
+            })
+        ];
+        return { headers, rows };
     }
-    const escapeCsv = value => `"${String(value ?? '').replace(/"/g, '""')}"`;
-    const csv = [headers, ...rows].map(row => row.map(escapeCsv).join(',')).join('\r\n');
+
+    if (type === 'donations') {
+        return {
+            headers: ['Donation ID', 'Donor', 'Type', 'Amount', 'Item', 'Quantity', 'Unit', 'Date', 'Purpose', 'Project', 'Status'],
+            rows: donations.filter(record => inRange(record.date)).map(record => [
+                donationReference(record.id), getDonationDonorName(record), record.type,
+                record.type === 'cash' ? record.amount : '', record.item, record.quantity ?? '',
+                record.unit || '', record.date, record.category, projectName(record.projectId),
+                normalizeDonationStatus(record.status)
+            ])
+        };
+    }
+    if (type === 'donors') {
+        return {
+            headers: ['Donor ID', 'Name', 'Type', 'Email', 'Phone', 'Organization', 'Status', 'Last Donation'],
+            rows: donors.filter(record => !record.lastDonation || inRange(record.lastDonation)).map(record => [
+                record.id ?? '', record.name, record.type, record.email, record.phone,
+                record.organization, record.status, record.lastDonation
+            ])
+        };
+    }
+    if (type === 'beneficiaries') {
+        return {
+            headers: ['Beneficiary ID', 'Name', 'Type', 'Contact', 'Location', 'Assistance Records'],
+            rows: beneficiaries
+                .map(record => ({
+                    ...record,
+                    assistance: (record.assistance || []).filter(item => {
+                        if (!from && !to) return true;
+                        return item.date && inRange(item.date);
+                    })
+                }))
+                .filter(record => !from && !to || record.assistance.length)
+                .map(record => [
+                    record.id ?? '', record.name, record.type, record.contact, record.location,
+                    record.assistance.length
+                ])
+        };
+    }
+    if (type === 'inventory') {
+        return {
+            headers: ['Donation ID', 'Donor', 'Item', 'Quantity', 'Unit', 'Date', 'Status'],
+            rows: donations.filter(record => record.type === 'in-kind' && inRange(record.date)).map(record => [
+                donationReference(record.id), getDonationDonorName(record), record.item,
+                record.quantity ?? '', record.unit || '', record.date, normalizeDonationStatus(record.status)
+            ])
+        };
+    }
+    if (type === 'distributions') {
+        return {
+            headers: ['Distribution ID', 'Project', 'Beneficiary', 'Item / Amount', 'Quantity', 'Date', 'Confirmed', 'Status'],
+            rows: distributions.filter(record => inRange(record.date)).map(record => [
+                record.id, projectName(record.projectId), beneficiaryName(record), record.itemAmount,
+                record.quantity, record.date, record.confirmed, record.status
+            ])
+        };
+    }
+    if (type === 'expenses') {
+        return {
+            headers: ['Expense ID', 'Description', 'Amount', 'Date', 'Project', 'Category', 'Reference', 'Status'],
+            rows: expenses.filter(record => inRange(record.date)).map(record => [
+                record.id ?? '', record.description, record.amount, record.date,
+                projectName(record.projectId), record.category, record.reference,
+                record.verified ? 'Verified' : 'Pending'
+            ])
+        };
+    }
+    if (type === 'projects') {
+        return {
+            headers: ['Project ID', 'Project', 'Budget', 'Verified Cash Received', 'Verified Expenses', 'Beneficiaries Helped', 'Distributions', 'Status'],
+            rows: projects.map(project => {
+                const projectDonations = donations.filter(donation =>
+                    Number(donation.projectId) === Number(project.id) && inRange(donation.date)
+                );
+                const projectExpenses = expenses.filter(expense =>
+                    Number(expense.projectId) === Number(project.id) && inRange(expense.date)
+                );
+                const projectDistributions = distributions.filter(distribution =>
+                    Number(distribution.projectId) === Number(project.id) && inRange(distribution.date)
+                );
+                const verifiedCash = projectDonations
+                    .filter(donation => donation.type === 'cash'
+                        && ['verified', 'allocated', 'distributed', 'completed'].includes(normalizeDonationStatus(donation.status)))
+                    .reduce((sum, donation) => sum + Number(donation.amount || 0), 0);
+                const verifiedExpenses = projectExpenses
+                    .filter(expense => expense.verified)
+                    .reduce((sum, expense) => sum + Number(expense.amount || 0), 0);
+                return [
+                    project.id ?? '', project.name, project.budget, verifiedCash, verifiedExpenses,
+                    new Set(projectDistributions.map(distribution => distribution.beneficiaryId != null
+                        ? `id:${distribution.beneficiaryId}`
+                        : distribution.beneficiaryName ? `name:${String(distribution.beneficiaryName).toLocaleLowerCase()}` : ''
+                    ).filter(Boolean)).size,
+                    projectDistributions.length, project.status
+                ];
+            })
+        };
+    }
+    if (type === 'monthly' || type === 'annual') {
+        const headers = [
+            type === 'annual' ? 'Year' : 'Month', 'Donation Records',
+            'Verified Cash Donations', 'Verified Cash Received', 'Verified Expenses'
+        ];
+        const periods = new Map();
+        const getPeriod = date => {
+            const key = type === 'annual' ? date.slice(0, 4) : date.slice(0, 7);
+            if (!periods.has(key)) periods.set(key, { donations: 0, verifiedCashCount: 0, cash: 0, expenses: 0 });
+            return periods.get(key);
+        };
+        donations.filter(record => record.date && inRange(record.date)).forEach(record => {
+            const period = getPeriod(record.date);
+            period.donations += 1;
+            if (record.type === 'cash' && ['verified', 'allocated', 'distributed', 'completed'].includes(normalizeDonationStatus(record.status))) {
+                period.cash += Number(record.amount || 0);
+                period.verifiedCashCount += 1;
+            }
+        });
+        expenses.filter(record => record.date && inRange(record.date) && record.verified).forEach(record => {
+            const period = getPeriod(record.date);
+            period.expenses += Number(record.amount || 0);
+        });
+        return {
+            headers,
+            rows: [...periods.entries()].sort((a, b) => a[0].localeCompare(b[0])).map(([period, data]) => [
+                period, data.donations, data.verifiedCashCount, data.cash, data.expenses
+            ])
+        };
+    }
+    throw new Error('Choose a valid report type and try again.');
+}
+
+function describeReportDateScope(from, to) {
+    const undatedNote = 'Undated project and beneficiary profiles remain included.';
+    if (from && to) return `Time-based records dated ${formatDate(from)} through ${formatDate(to)}. ${undatedNote}`;
+    if (from) return `Time-based records dated ${formatDate(from)} onward. ${undatedNote}`;
+    if (to) return `Time-based records dated through ${formatDate(to)}. ${undatedNote}`;
+    return 'All available records; date fields are not restricted.';
+}
+
+function updateReportPreview() {
+    const type = document.getElementById('reportType')?.value;
+    const from = document.getElementById('reportFrom')?.value || '';
+    const to = document.getElementById('reportTo')?.value || '';
+    const count = document.getElementById('reportPreviewCount');
+    const details = document.getElementById('reportPreviewDetails');
+    const downloadButton = document.getElementById('reportGenerate');
+    if (!type || !count || !details) return;
+    if (from && to && from > to) {
+        count.textContent = 'Date range needs attention';
+        details.textContent = 'Choose a start date on or before the end date.';
+        if (downloadButton) downloadButton.disabled = true;
+        return;
+    }
+    try {
+        const report = buildReportData(type, from, to);
+        const label = report.rows.length === 1 ? 'record' : 'records';
+        count.textContent = `${report.rows.length.toLocaleString()} ${label} ready`;
+        details.textContent = `${type === 'all' ? 'All records' : document.getElementById('reportType').selectedOptions[0].textContent} · ${describeReportDateScope(from, to)}`;
+        if (downloadButton) downloadButton.disabled = false;
+    } catch (error) {
+        count.textContent = 'Preview unavailable';
+        details.textContent = error.message;
+        if (downloadButton) downloadButton.disabled = true;
+    }
+}
+
+function downloadReport() {
+    const type = document.getElementById('reportType').value;
+    const from = document.getElementById('reportFrom').value;
+    const to = document.getElementById('reportTo').value;
+    if (from && to && from > to) {
+        setText('reportMessage', 'Choose a start date on or before the end date.');
+        updateReportPreview();
+        return;
+    }
+    let report;
+    try {
+        report = buildReportData(type, from, to);
+    } catch (error) {
+        console.error('Unable to prepare report.', error);
+        setText('reportMessage', `Could not prepare the report: ${error.message}`);
+        return;
+    }
+    if (!report.rows.length) {
+        setText('reportMessage', 'No records match this report and date range. Nothing was downloaded.');
+        return;
+    }
+    const escapeCsv = value => {
+        let text = String(value ?? '');
+        if (/^[\s]*[=+\-@]/.test(text)) text = `'${text}`;
+        return `"${text.replace(/"/g, '""')}"`;
+    };
+    const csv = [report.headers, ...report.rows].map(row => row.map(escapeCsv).join(',')).join('\r\n');
     const blob = new Blob(['\uFEFF', csv], { type: 'text/csv;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `kbk-${type}-report.csv`;
+    link.download = `kbk-${type}-report${from ? `-${from}` : ''}${to ? `-to-${to}` : ''}.csv`;
+    document.body.appendChild(link);
     link.click();
-    URL.revokeObjectURL(url);
-    setText('reportMessage', `Downloaded a CSV report with ${rows.length} row(s).`);
-    logActivity(`Generated ${type} report`);
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    setText('reportMessage', `Downloaded a CSV report with ${report.rows.length.toLocaleString()} ${report.rows.length === 1 ? 'record' : 'records'}.`);
+    logActivity(`Downloaded ${type} report (${report.rows.length} records)`);
 }
 
 /* ---------- USER & ACCOUNT MANAGEMENT ---------- */
@@ -4105,6 +4305,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (importButton) importButton.disabled = true;
         }
         document.getElementById('reportGenerate')?.addEventListener('click', downloadReport);
+        ['reportType', 'reportFrom', 'reportTo'].forEach(id => {
+            document.getElementById(id)?.addEventListener('change', updateReportPreview);
+        });
+        updateReportPreview();
         renderBeneficiaryTable();
         const assistanceRequestStatus = document.getElementById('assistanceRequestStatus');
         const publicFeedbackStatus = document.getElementById('publicFeedbackStatus');
