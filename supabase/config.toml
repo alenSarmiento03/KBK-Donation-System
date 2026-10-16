@@ -1,0 +1,5 @@
+[functions.notify-inbox]
+verify_jwt = false
+
+[functions.public-submit]
+verify_jwt = false

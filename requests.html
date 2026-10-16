@@ -11,19 +11,21 @@
     <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
     <div class="admin-layout">
         <aside class="sidebar">
-            <div class="sidebar-brand"><div class="logo"><img src="photo.png/logo1.png" alt="KBK logo"></div><span class="brand-name">KBK Community Donation Tracking System</span></div>
+            <div class="sidebar-brand"><div class="logo"><img src="photo.png/kbk-community-emblem.png" alt="KBK logo"></div><span class="brand-name">KBK Community Donation Tracking System</span></div>
             <ul class="sidebar-menu"></ul>
         </aside>
         <main class="main-content">
             <section class="section-block">
                 <div class="page-header compact"><div><h1>Assistance Requests</h1><p>Review public assistance requests. Only authorized administrators can approve or decline requests.</p></div></div>
-                <p class="request-storage-note">New public requests are stored in Supabase and visible only to active administrators. Requests submitted before the shared inbox was configured may remain in the browser storage on the device where they were submitted; review that device before clearing its browser data.</p>
+                <p class="request-storage-note">New public requests are stored in Supabase and visible only to active administrators. Use Reply by email or Reply by SMS to contact the requester; update the request status after following up. Requests submitted before the shared inbox was configured may remain in the browser storage on the device where they were submitted; review that device before clearing its browser data.</p>
                 <p class="request-admin-status" id="assistanceRequestStatus" role="status" aria-live="polite">Loading assistance requests…</p>
+                <div class="donor-toolbar"><input class="form-control" id="assistanceRequestSearch" type="search" aria-label="Search assistance requests" placeholder="Search requester, contact, or request"><select class="form-control" id="assistanceRequestFilter" aria-label="Filter assistance requests"><option value="all">All statuses</option><option>Pending</option><option>Approved</option><option>Declined</option></select></div>
                 <div class="table-wrapper"><table><thead><tr><th>Submitted</th><th>Requester</th><th>Contact</th><th>Assistance</th><th>Quantity</th><th>Description / Supporting Information</th><th>Status / Review</th></tr></thead><tbody id="assistanceRequestTableBody"></tbody></table></div>
             </section>
             <section class="section-block">
-                <div class="page-header compact"><div><h2>Contact / Feedback Inbox</h2><p>Messages sent from the public contact form. Only active administrators can read and manage them; new messages do not generate an email notification.</p></div></div>
+                <div class="page-header compact"><div><h2>Contact / Feedback Inbox</h2><p>Messages are stored privately in Supabase. Reply opens your email or SMS app; set each message to New, Replied, or Resolved to track follow-up.</p></div></div>
                 <p class="request-admin-status" id="publicFeedbackStatus" role="status" aria-live="polite">Loading contact messages…</p>
+                <div class="donor-toolbar"><input class="form-control" id="publicFeedbackSearch" type="search" aria-label="Search contact messages" placeholder="Search sender, subject, or message"><select class="form-control" id="publicFeedbackFilter" aria-label="Filter contact messages"><option value="all">All statuses</option><option>New</option><option>Replied</option><option>Resolved</option></select></div>
                 <div class="table-wrapper"><table><thead><tr><th>Submitted</th><th>Name</th><th>Contact</th><th>Subject</th><th>Message</th><th>Status / Actions</th></tr></thead><tbody id="publicFeedbackTableBody"></tbody></table></div>
             </section>
         </main>

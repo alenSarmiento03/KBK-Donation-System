@@ -15,6 +15,14 @@ const ACTIVITY_KEY = 'kbk_activity_log';
 const INVENTORY_KEY = 'kbk_inventory';
 const FEEDBACK_KEY = 'kbk_public_feedback';
 const DONATION_RECEIPTS_BUCKET = 'kbk-donation-receipts';
+const PUBLIC_TRANSPARENCY_BUCKET = 'kbk-public-transparency';
+const PUBLIC_TRANSPARENCY_TYPES = new Map([
+    ['application/pdf', 'pdf'],
+    ['image/jpeg', 'jpg'],
+    ['image/png', 'png'],
+    ['image/webp', 'webp']
+]);
+let publicTransparencyEvidence = [];
 const DONATION_RECEIPT_TYPES = new Map([
     ['application/pdf', 'pdf'],
     ['image/jpeg', 'jpg'],
@@ -36,10 +44,14 @@ const pendingSharedWrites = new Map();
 const remoteRevisions = new Map();
 let publicUniqueDonorCount = null;
 let publicBeneficiariesHelped = null;
+let publicDataUnavailable = false;
+let publicDataLoadedAt = null;
+const turnstileWidgets = new Map();
+let turnstileScriptPromise = null;
 let remoteAssistanceRequests = null;
 let remoteFeedbackMessages = null;
 let donationSaveInProgress = false;
-
+let expenseSaveInProgress = false;
 function showSystemStatus(message, isError = false) {
     let status = document.getElementById('kbkSystemStatus');
     if (!status) {
@@ -54,7 +66,29 @@ function showSystemStatus(message, isError = false) {
     status.style.color = isError ? '#842029' : '#664d03';
     status.style.borderColor = isError ? '#f5c2c7' : '#ffecb5';
     status.setAttribute('role', isError ? 'alert' : 'status');
-    if (isError && pendingSharedWrites.size && !message.includes('Another administrator changed')) {
+    const isRevisionConflict = message.includes('Another administrator changed');
+    if (isError && isRevisionConflict) {
+        const reloadButton = document.createElement('button');
+        reloadButton.type = 'button';
+        reloadButton.textContent = 'Save a recovery copy and reload';
+        reloadButton.style.cssText = 'margin-left:12px;padding:5px 10px;border:1px solid currentColor;border-radius:5px;background:transparent;color:inherit;cursor:pointer';
+        reloadButton.addEventListener('click', () => {
+            const recovery = {};
+            [...pendingSharedWrites.keys()].forEach(key => {
+                const value = localStorage.getItem(key);
+                if (value !== null) recovery[key] = JSON.parse(value);
+            });
+            const blob = new Blob([JSON.stringify({ savedAt: new Date().toISOString(), lists: recovery }, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `kbk-unsynced-recovery-${new Date().toISOString().slice(0, 10)}.json`;
+            link.click();
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+            if (window.confirm('A recovery file has been downloaded. Reload now to get the latest shared records? Unsynced edits will be replaced in this browser.')) window.location.reload();
+        });
+        status.appendChild(reloadButton);
+    } else if (isError && pendingSharedWrites.size) {
         const retryButton = document.createElement('button');
         retryButton.type = 'button';
         retryButton.textContent = 'Retry sync';
@@ -78,6 +112,67 @@ function loadScript(src) {
     });
 }
 
+async function initializeMotionEnhancements(page) {
+    if (!['public', 'dashboard', 'login'].includes(page)) return;
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+
+    try {
+        await loadScript('https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/gsap.min.js');
+        await Promise.all([
+            loadScript('https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/ScrollTrigger.min.js'),
+            loadScript('https://unpkg.com/lenis@1.3.26/dist/lenis.min.js')
+        ]);
+
+        const { gsap, ScrollTrigger, Lenis } = window;
+        if (!gsap || !ScrollTrigger || !Lenis) return;
+        gsap.registerPlugin(ScrollTrigger);
+
+        const lenis = new Lenis({
+            autoRaf: false,
+            anchors: true,
+            allowNestedScroll: true
+        });
+        lenis.on('scroll', ScrollTrigger.update);
+        const updateLenis = time => lenis.raf(time * 1000);
+        gsap.ticker.add(updateLenis);
+        gsap.ticker.lagSmoothing(0);
+        window.kbkLenis = lenis;
+
+        const revealTargets = page === 'login'
+            ? '.login-card'
+            : page === 'dashboard'
+                ? '.admin-context-bar, .main-content > .page-header, .main-content > .section-block'
+                : '.public-home-hero .hero-inner, .public-home-hero .hero-art, .public-dashboard-container > section, .public-page-content main > .public-page-hero, .public-page-content main > .hero, .public-page-content main > section';
+        const animations = gsap.matchMedia();
+        animations.add('(prefers-reduced-motion: no-preference)', () => {
+            gsap.utils.toArray(revealTargets).forEach(element => {
+                gsap.fromTo(element,
+                    { autoAlpha: 0, y: 14 },
+                    {
+                        autoAlpha: 1,
+                        y: 0,
+                        duration: 0.45,
+                        ease: 'power2.out',
+                        clearProps: 'transform,opacity,visibility',
+                        scrollTrigger: {
+                            trigger: element,
+                            start: 'top 94%',
+                            once: true
+                        }
+                    }
+                );
+            });
+        });
+        window.addEventListener('pagehide', () => {
+            animations.revert();
+            lenis.destroy();
+            gsap.ticker.remove(updateLenis);
+        }, { once: true });
+    } catch {
+        // Motion is an enhancement; core navigation and page content work without the CDNs.
+    }
+}
+
 async function initializeSupabaseClient() {
     if (!window.KBK_SUPABASE_CONFIG?.url || !window.KBK_SUPABASE_CONFIG?.anonKey
         || window.KBK_SUPABASE_CONFIG.url.includes('YOUR_PROJECT_ID')
@@ -85,13 +180,13 @@ async function initializeSupabaseClient() {
         try {
             await loadScript('supabase-config.js');
         } catch {
-            throw new Error('Supabase is not configured. Create supabase-config.js from supabase-config.example.js and enter the project URL and publishable key.');
+            throw new Error('Supabase is not configured. Create supabase-config.js using the example in SUPABASE_SETUP.md and enter the project URL and publishable key.');
         }
     }
     const config = window.KBK_SUPABASE_CONFIG;
     if (!config?.url || !config?.anonKey || config.url.includes('YOUR_PROJECT_ID')
         || config.anonKey.includes('YOUR_SUPABASE')) {
-        throw new Error('Supabase is not configured. Create supabase-config.js from supabase-config.example.js and enter the project URL and publishable key.');
+        throw new Error('Supabase is not configured. Create supabase-config.js using the example in SUPABASE_SETUP.md and enter the project URL and publishable key.');
     }
     let projectUrl;
     try {
@@ -155,6 +250,9 @@ function preserveLegacyBrowserData() {
 async function loadPublicSharedData() {
     const { data, error } = await supabaseClient.rpc('kbk_public_snapshot');
     if (error) throw new Error(`Unable to load public transparency data: ${error.message}`);
+    if (!data || typeof data !== 'object' || Array.isArray(data)) {
+        throw new Error('The public data service returned an invalid response. Please try again later.');
+    }
     publicUniqueDonorCount = Number.isInteger(data?.kbk_public_metadata?.uniqueDonors)
         ? data.kbk_public_metadata.uniqueDonors : null;
     publicBeneficiariesHelped = Number.isInteger(data?.kbk_public_metadata?.beneficiariesHelped)
@@ -163,6 +261,109 @@ async function loadPublicSharedData() {
         if (Object.prototype.hasOwnProperty.call(data, key)) cacheRemoteValue(key, data[key]);
         else cacheRemoteValue(key, []);
     }
+    publicDataUnavailable = false;
+    publicDataLoadedAt = new Date();
+}
+
+async function loadPublicTransparencyEvidence() {
+    const container = document.getElementById('publicTransparencyEvidence');
+    if (!container) return;
+    if (!supabaseClient) {
+        container.innerHTML = '<p class="transparency-intro">Published documents are unavailable until the shared data service is configured.</p>';
+        return;
+    }
+    container.innerHTML = '<p class="transparency-intro">Loading published documents…</p>';
+    const { data, error } = await supabaseClient.from('kbk_public_transparency_evidence')
+        .select('id,title,description,document_date,storage_path,created_at')
+        .order('document_date', { ascending: false, nullsFirst: false })
+        .order('created_at', { ascending: false });
+    if (error) {
+        container.innerHTML = '<p class="transparency-intro">Published documents are temporarily unavailable.</p>';
+        console.error('Unable to load public transparency documents.', error);
+        return;
+    }
+    publicTransparencyEvidence = data || [];
+    renderPublicTransparencyEvidence();
+}
+
+function renderPublicTransparencyEvidence() {
+    const container = document.getElementById('publicTransparencyEvidence');
+    if (!container) return;
+    container.innerHTML = publicTransparencyEvidence.map(item => {
+        const { data } = supabaseClient.storage.from(PUBLIC_TRANSPARENCY_BUCKET).getPublicUrl(item.storage_path);
+        return `<article class="public-evidence-card"><div><h3>${escapeHtml(item.title)}</h3>${item.document_date ? `<p class="public-evidence-date">${escapeHtml(formatDate(item.document_date))}</p>` : ''}<p>${escapeHtml(item.description || '')}</p></div><a class="btn btn-outline" href="${escapeHtml(data.publicUrl)}" target="_blank" rel="noopener">View document</a></article>`;
+    }).join('') || '<p class="transparency-intro">No public supporting documents have been published yet.</p>';
+}
+
+async function loadAdminTransparencyEvidence() {
+    const { data, error } = await supabaseClient.from('kbk_public_transparency_evidence')
+        .select('id,title,description,document_date,storage_path,created_at')
+        .order('created_at', { ascending: false });
+    if (error) throw new Error(error.message);
+    publicTransparencyEvidence = data || [];
+    renderAdminTransparencyEvidence();
+    renderPublicTransparencyEvidence();
+}
+
+function renderAdminTransparencyEvidence() {
+    const tbody = document.getElementById('transparencyEvidenceTableBody');
+    if (!tbody) return;
+    tbody.innerHTML = publicTransparencyEvidence.map(item => `<tr><td>${escapeHtml(item.title)}</td><td>${item.document_date ? escapeHtml(formatDate(item.document_date)) : '—'}</td><td><a href="${escapeHtml(supabaseClient.storage.from(PUBLIC_TRANSPARENCY_BUCKET).getPublicUrl(item.storage_path).data.publicUrl)}" target="_blank" rel="noopener">Preview</a></td><td><button class="btn btn-danger btn-xs" type="button" data-transparency-evidence-delete="${Number(item.id)}">Remove</button></td></tr>`).join('') || '<tr><td colspan="4" class="empty-table">No public documents published.</td></tr>';
+    tbody.querySelectorAll('[data-transparency-evidence-delete]').forEach(button => button.addEventListener('click', () => deletePublicTransparencyEvidence(Number(button.dataset.transparencyEvidenceDelete))));
+}
+
+async function handleTransparencyEvidenceSubmit(event) {
+    event.preventDefault();
+    if (getUserRole() !== 'admin') return;
+    const form = event.currentTarget;
+    const submit = form.querySelector('button[type="submit"]');
+    const file = document.getElementById('transparencyEvidenceFile').files?.[0];
+    if (!file || !PUBLIC_TRANSPARENCY_TYPES.has(file.type) || file.size < 1 || file.size > 5 * 1024 * 1024) {
+        window.alert('Choose a PDF, JPEG, PNG, or WebP file smaller than 5 MB.');
+        return;
+    }
+    submit.disabled = true;
+    const path = `${window.crypto.randomUUID()}.${PUBLIC_TRANSPARENCY_TYPES.get(file.type)}`;
+    try {
+        const { error: uploadError } = await supabaseClient.storage.from(PUBLIC_TRANSPARENCY_BUCKET).upload(path, file, { contentType: file.type, upsert: false });
+        if (uploadError) throw new Error(uploadError.message);
+        const { error } = await supabaseClient.from('kbk_public_transparency_evidence').insert({
+            title: document.getElementById('transparencyEvidenceTitle').value.trim(),
+            description: document.getElementById('transparencyEvidenceDescription').value.trim() || null,
+            document_date: document.getElementById('transparencyEvidenceDate').value || null,
+            storage_path: path,
+            created_by: supabaseUser.id
+        });
+        if (error) {
+            await supabaseClient.storage.from(PUBLIC_TRANSPARENCY_BUCKET).remove([path]);
+            throw new Error(error.message);
+        }
+        form.reset();
+        await loadAdminTransparencyEvidence();
+        showSystemStatus('Redacted document published on the public transparency page.');
+    } catch (error) {
+        console.error('Unable to publish transparency document.', error);
+        window.alert(`Unable to publish document: ${error.message}`);
+    } finally {
+        submit.disabled = false;
+    }
+}
+
+async function deletePublicTransparencyEvidence(id) {
+    if (getUserRole() !== 'admin') return;
+    const item = publicTransparencyEvidence.find(record => Number(record.id) === id);
+    if (!item || !window.confirm(`Remove “${item.title}” from the public transparency page?`)) return;
+    const { error: storageError } = await supabaseClient.storage.from(PUBLIC_TRANSPARENCY_BUCKET).remove([item.storage_path]);
+    if (storageError) {
+        window.alert(`Unable to remove the public document file: ${storageError.message}`);
+        return;
+    }
+    const { error } = await supabaseClient.from('kbk_public_transparency_evidence').delete().eq('id', id);
+    if (error) {
+        window.alert(`The file was removed, but the listing could not be deleted. Refresh and retry: ${error.message}`);
+        return;
+    }
+    await loadAdminTransparencyEvidence();
 }
 
 async function loadAdminAssistanceRequests() {
@@ -221,7 +422,7 @@ async function initializeSupabaseForPage(page) {
                 .eq('user_id', session.user.id)
                 .maybeSingle();
             if (profileError) throw new Error(`Unable to verify your KBK account: ${profileError.message}`);
-            if (!profile || !profile.active || !['admin', 'staff'].includes(String(profile.role).toLowerCase())) {
+            if (!profile || !profile.active || String(profile.role).toLowerCase() !== 'admin') {
                 await supabaseClient.auth.signOut();
                 clearAuthSession();
                 throw new Error('This account is not active for the KBK system. Contact an administrator.');
@@ -237,7 +438,10 @@ async function initializeSupabaseForPage(page) {
         if (page === 'dashboard') {
             if (!session) return;
             preserveLegacyBrowserData();
-            if (String(sessionStorage.getItem(ROLE_KEY)).toLowerCase() === 'admin') await loadAdminSharedData();
+            if (String(sessionStorage.getItem(ROLE_KEY)).toLowerCase() === 'admin') {
+                await loadAdminSharedData();
+                await ensureCommunityFoodPackCampaign();
+            }
             else {
                 const { data, error: readError } = await supabaseClient.from('kbk_app_data').select('data_key,data');
                 if (readError) throw new Error(`Unable to load shared KBK records: ${readError.message}`);
@@ -251,6 +455,7 @@ async function initializeSupabaseForPage(page) {
     } catch (error) {
         clearAuthSession();
         supabaseInitializationError = error;
+        if (page === 'public') publicDataUnavailable = true;
         console.error('Supabase initialization failed.', error);
         showSystemStatus(error.message, true);
     }
@@ -333,11 +538,13 @@ const DEFAULT_PROJECTS = [
     { id: 2, name: 'Food Distribution', budget: 20000, description: 'Food packs for local families', status: 'Active', donationIds: [] },
     { id: 3, name: 'Christmas Giving', budget: 25000, description: 'Seasonal community giving', status: 'Planned', donationIds: [] },
     { id: 4, name: 'Youth Outreach', budget: 12000, description: 'Youth engagement and activities', status: 'Active', donationIds: [] },
-    { id: 5, name: 'Community Assistance', budget: 18000, description: 'Emergency and community support', status: 'Active', donationIds: [] }
+    { id: 5, name: 'Community Assistance', budget: 18000, description: 'Emergency and community support', status: 'Active', donationIds: [] },
+    { id: 6, name: 'Community Food Pack Campaign', budget: 30000, description: 'Fundraising campaign to provide food packs for local families.', status: 'Active', donationIds: [] }
 ];
 
 /* ---------- DATA HELPERS ---------- */
 function getDonations() {
+    if (publicDataUnavailable && document.body.dataset.page === 'public') return [];
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_DONATIONS));
@@ -543,6 +750,52 @@ async function openDonationReceipt(path) {
     }
 }
 
+async function uploadExpenseReceipt(file, expenseId) {
+    if (!supabaseClient || getUserRole() !== 'admin') {
+        throw new Error('A signed-in administrator is required to upload expense receipts.');
+    }
+    const extension = DONATION_RECEIPT_TYPES.get(file.type);
+    if (!extension) throw new Error('Choose a PDF, JPEG, PNG, or WebP receipt.');
+    if (file.size <= 0 || file.size > 512 * 1024) {
+        throw new Error('Receipt files must be between 1 byte and 512 KB.');
+    }
+    if (!window.crypto?.randomUUID) {
+        throw new Error('This browser cannot create a secure receipt file name. Use an up-to-date browser and try again.');
+    }
+
+    const path = `expenses/${expenseId}/${window.crypto.randomUUID()}.${extension}`;
+    const { error } = await supabaseClient.storage
+        .from(DONATION_RECEIPTS_BUCKET)
+        .upload(path, file, { contentType: file.type, upsert: false });
+    if (error) throw new Error(`Unable to upload the expense receipt: ${error.message}`);
+
+    return {
+        path,
+        name: file.name.replace(/[\\/]/g, '_').slice(0, 120) || `receipt.${extension}`,
+        type: file.type
+    };
+}
+
+async function openExpenseReceipt(path) {
+    if (getUserRole() !== 'admin' || !/^expenses\/\d+\/[0-9a-f-]{36}\.(pdf|jpg|png|webp)$/i.test(path)) {
+        throw new Error('This expense receipt is not available to this account.');
+    }
+    const receiptWindow = window.open('about:blank', '_blank');
+    if (!receiptWindow) throw new Error('Allow pop-ups for this site, then open the receipt again.');
+    receiptWindow.opener = null;
+
+    try {
+        const { data, error } = await supabaseClient.storage
+            .from(DONATION_RECEIPTS_BUCKET)
+            .createSignedUrl(path, 60, { download: true });
+        if (error) throw new Error(error.message);
+        receiptWindow.location.replace(data.signedUrl);
+    } catch (error) {
+        receiptWindow.close();
+        throw new Error(`Unable to open the private expense receipt: ${error.message}`);
+    }
+}
+
 function createDonationAcknowledgement(donation) {
     if (getUserRole() !== 'admin') return;
     const receiptWindow = window.open('', '_blank');
@@ -562,7 +815,7 @@ function createDonationAcknowledgement(donation) {
     const generatedDate = new Date().toLocaleString('en-PH', {
         year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'
     });
-    const logoUrl = new URL('photo.png/logo1.png', window.location.href).href;
+    const logoUrl = new URL('photo.png/kbk-community-emblem.png', window.location.href).href;
     const receiptHtml = `<!doctype html>
 <html lang="en">
 <head>
@@ -680,6 +933,7 @@ function saveDonors(list) {
 }
 
 function getBeneficiaries() {
+    if (publicDataUnavailable && document.body.dataset.page === 'public') return [];
     const raw = localStorage.getItem(BENEFICIARY_KEY);
     if (!raw) {
         localStorage.setItem(BENEFICIARY_KEY, JSON.stringify(DEFAULT_BENEFICIARIES));
@@ -700,6 +954,7 @@ function saveBeneficiaries(list) {
 }
 
 function readStoredList(key, label, defaults = []) {
+    if (publicDataUnavailable && document.body.dataset.page === 'public') return [];
     const raw = localStorage.getItem(key);
     if (!raw) {
         localStorage.setItem(key, JSON.stringify(defaults));
@@ -722,6 +977,24 @@ function saveStoredList(key, list) {
 
 function getProjects() {
     return readStoredList(PROJECT_KEY, 'projects', DEFAULT_PROJECTS);
+}
+
+async function ensureCommunityFoodPackCampaign() {
+    const projects = getProjects();
+    const campaignExists = projects.some(project =>
+        String(project.name).trim().toLocaleLowerCase() === 'community food pack campaign'
+    );
+    if (campaignExists) return;
+
+    projects.push({
+        id: nextId(projects),
+        name: 'Community Food Pack Campaign',
+        budget: 30000,
+        description: 'Fundraising campaign to provide food packs for local families.',
+        status: 'Active',
+        donationIds: []
+    });
+    await saveStoredList(PROJECT_KEY, projects);
 }
 
 function getDistributions() {
@@ -919,7 +1192,7 @@ function clearAuthSession() {
 }
 
 function requireAuth() {
-    if (!isLoggedIn() || !['admin', 'staff'].includes(getUserRole())) {
+    if (!isLoggedIn() || getUserRole() !== 'admin') {
         clearAuthSession();
         window.location.replace('login.html');
         return false;
@@ -954,10 +1227,13 @@ function updatePublicDataStatus() {
     if (!status) return;
     if (supabaseInitializationError) {
         status.hidden = false;
-        status.textContent = 'Live community data could not be loaded. Any figures shown may be saved in this browser and could be out of date; please try again later.';
+        status.textContent = 'Live community data is unavailable. Figures and records are hidden until KBK data can be loaded. Please try again later.';
         return;
     }
-    status.hidden = true;
+    status.hidden = false;
+    status.textContent = publicDataLoadedAt
+        ? `Community data loaded from KBK at ${publicDataLoadedAt.toLocaleTimeString('en-PH', { hour: 'numeric', minute: '2-digit' })}.`
+        : 'Loading the latest community data…';
 }
 
 function renderPublicPage() {
@@ -1039,21 +1315,36 @@ function renderPublicCampaignProgress(donations) {
     `).join('') || '<p class="empty-table">No active campaigns with a fundraising target are currently listed.</p>';
 }
 
+function getProjectFundingSummary(projectId, donations = getDonations()) {
+    const eligibleDonations = donations.filter(donation =>
+        donation.type === 'cash' &&
+        Number(donation.projectId) === Number(projectId) &&
+        ['verified', 'allocated', 'distributed', 'completed'].includes(String(donation.status).toLowerCase())
+    );
+    const allocated = eligibleDonations.reduce((sum, donation) => sum + (Array.isArray(donation.allocations)
+        ? donation.allocations.reduce((allocationSum, allocation) => allocationSum + Number(allocation.amount || 0), 0)
+        : 0), 0);
+    const projectExpenses = getExpenses().filter(expense => Number(expense.projectId) === Number(projectId));
+    const verifiedExpenses = projectExpenses
+        .filter(expense => expense.verified === true)
+        .reduce((sum, expense) => sum + Number(expense.amount || 0), 0);
+    const pendingExpenses = projectExpenses
+        .filter(expense => expense.verified !== true)
+        .reduce((sum, expense) => sum + Number(expense.amount || 0), 0);
+    return { allocated, verifiedExpenses, pendingExpenses, available: allocated - verifiedExpenses };
+}
+
 function renderPublicProjectTransparency(donations) {
     const container = document.getElementById('publicProjectTransparency');
     if (!container) return;
-    const expenses = getExpenses().filter(expense => expense.verified === true);
     const cards = getProjects().map(project => {
         const linkedCashDonations = donations.filter(donation =>
             donation.type === 'cash' && Number(donation.projectId) === Number(project.id)
         );
         const received = linkedCashDonations.reduce((sum, donation) => sum + Number(donation.amount || 0), 0);
-        const allocated = linkedCashDonations.reduce((sum, donation) => sum + (Array.isArray(donation.allocations)
-            ? donation.allocations.reduce((allocationSum, allocation) => allocationSum + Number(allocation.amount || 0), 0)
-            : 0), 0);
-        const projectExpenses = expenses
-            .filter(expense => Number(expense.projectId) === Number(project.id))
-            .reduce((sum, expense) => sum + Number(expense.amount || 0), 0);
+        const funding = getProjectFundingSummary(project.id, donations);
+        const projectExpenses = funding.verifiedExpenses;
+        const allocated = funding.allocated;
         if (received === 0 && allocated === 0 && projectExpenses === 0) return '';
         return `<article class="impact-card project-transparency-card">
             <h3>${escapeHtml(project.name)}</h3>
@@ -1137,8 +1428,16 @@ function renderPublicDonorRecognition(donations) {
             ? peso(donation.amount)
             : escapeHtml(formatInKindDonation(donation));
         return `<article class="donor-recognition-card">
-            <span>${escapeHtml(publicDonorDisplayName(donation))}</span>
-            <strong>${contribution}</strong>
+            <div class="recognition-person">
+                <span class="recognition-avatar" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M4.5 20c.5-4 3-6 7.5-6s7 2 7.5 6"/></svg></span>
+                <span class="recognition-person-copy"><strong class="recognition-name">${escapeHtml(publicDonorDisplayName(donation))}</strong><small>Verified community supporter</small></span>
+            </div>
+            <div class="recognition-contribution">
+                <span class="recognition-contribution-icon" aria-hidden="true"><svg viewBox="0 0 24 24">${donation.type === 'cash'
+                    ? '<path d="M12 3v18m4-14.5c-.8-1-2-1.5-4-1.5-2.2 0-3.5 1.1-3.5 2.7S10 10 12 10.5s3.5 1.4 3.5 3-1.3 2.8-3.5 2.8c-1.8 0-3.3-.6-4.2-1.7"/>'
+                    : '<path d="M3 9h18v12H3zM2 5h20v4H2zM12 5v16m0-16c-3.5 0-5-1-5-2.5S8 .5 9.5 2 12 5 12 5Zm0 0c3.5 0 5-1 5-2.5S16 .5 14.5 2 12 5 12 5Z"/>'}</svg></span>
+                <strong>${contribution}</strong>
+            </div>
         </article>`;
     }).join('') || '<p class="empty-table">Verified contributions will appear here after review.</p>';
 }
@@ -1184,19 +1483,33 @@ function renderPublicNews() {
     const announcements = [
         ...plannedDistributions.map(item => ({
             title: 'Upcoming Distribution',
+            label: 'Coming up',
+            kind: 'upcoming',
             detail: `${item.category || 'Community support'} — ${formatDate(item.date)}`
         })),
         ...completedProjects.map(project => ({
             title: 'Completed Project',
+            label: 'Milestone',
+            kind: 'project',
             detail: project.name
         })),
         ...completedDistributions.map(item => ({
             title: 'Distribution Update',
+            label: 'Community update',
+            kind: 'distribution',
             detail: `${item.category || 'Community support'} completed on ${formatDate(item.date)}`
         }))
     ];
     container.innerHTML = announcements.map(item => `
-        <article class="impact-card"><h3>${escapeHtml(item.title)}</h3><p>${escapeHtml(item.detail)}</p></article>
+        <article class="impact-card update-card update-card-${item.kind}">
+            <span class="update-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24">${item.kind === 'upcoming'
+                ? '<rect x="3.5" y="5" width="17" height="16" rx="2"/><path d="M7.5 3v4m9-4v4M3.5 10h17m-12 4 2.2 2.2 4.8-5"/>'
+                : item.kind === 'project'
+                    ? '<path d="M5 21V4m0 1c5-3 9 3 14 0v10c-5 3-9-3-14 0"/><path d="m9 10 2 2 4-4"/>'
+                    : '<path d="m3 8 9-5 9 5-9 5-9-5Zm0 0v9l9 5 9-5V8m-9 5v9"/><path d="m8 11 2 2 5-5"/>'}</svg></span>
+            <span class="update-card-label">${escapeHtml(item.label)}</span>
+            <h3>${escapeHtml(item.title)}</h3><p>${escapeHtml(item.detail)}</p>
+        </article>
     `).join('') || '<p class="empty-table">There are no current announcements. Updates will appear here when schedules or activities are recorded by KBK.</p>';
 }
 
@@ -1316,14 +1629,16 @@ async function submitPublicAssistanceRequest(event) {
 
     const request = {
         name: document.getElementById('requestName').value.trim(),
+        lguAttestation: document.getElementById('requestLguEligibility').checked,
         contact,
         type: document.getElementById('requestType').value,
         description: document.getElementById('requestDescription').value.trim(),
         quantity: document.getElementById('requestQuantity').value.trim()
     };
-    if (!request.type || !request.description || !document.getElementById('requestConsent').checked) {
+    if (!request.name || !request.type || !request.description
+        || !document.getElementById('requestLguEligibility').checked) {
         message.dataset.error = 'true';
-        message.textContent = 'Complete the required fields and confirm the privacy notice before submitting.';
+        message.textContent = 'Complete the required fields and confirm you are submitting for a Lipa City LGU before submitting.';
         return;
     }
 
@@ -1332,28 +1647,41 @@ async function submitPublicAssistanceRequest(event) {
         message.textContent = 'Online request submission is not available right now. Please contact KBK by email or try again later.';
         return;
     }
+    const turnstileToken = getPublicSubmissionToken(form);
+    if (!turnstileToken) {
+        message.dataset.error = 'true';
+        message.textContent = 'Complete the security check before submitting.';
+        return;
+    }
 
     submitButton.disabled = true;
     form.setAttribute('aria-busy', 'true');
     message.textContent = 'Submitting your request securely…';
     try {
-        const { error } = await supabaseClient.from('kbk_assistance_requests').insert({
-            requester_name: request.name || null,
-            contact: request.contact,
-            assistance_type: request.type,
-            description: request.description,
-            quantity: request.quantity || null
+        const { error } = await supabaseClient.functions.invoke('public-submit', {
+            body: {
+                type: 'assistance',
+                token: turnstileToken,
+                request: {
+                    requester_name: request.name || null,
+                    lgu_attestation: request.lguAttestation,
+                    contact: request.contact,
+                    assistance_type: request.type,
+                    description: request.description,
+                    quantity: request.quantity || null
+                }
+            }
         });
-        if (error) throw new Error(error.message);
+        if (error) throw new Error(await getPublicSubmissionError(error, 'We could not save your request. Please try again later.'));
         form.reset();
         message.dataset.error = 'false';
         message.textContent = 'Your request was sent to KBK. An administrator will review it; contact KBK directly if you need urgent help.';
     } catch (error) {
         console.error('Unable to submit assistance request.', error);
         message.dataset.error = 'true';
-        message.textContent = 'We could not confirm that your request was sent. Contact KBK before resubmitting to avoid a duplicate request.';
+        message.textContent = error.message;
     } finally {
-        submitButton.disabled = false;
+        resetPublicSubmissionChallenge(form);
         form.removeAttribute('aria-busy');
     }
 }
@@ -1370,7 +1698,19 @@ function renderAssistanceRequests() {
         tbody.innerHTML = '<tr><td colspan="7" class="empty-table">The shared request inbox could not be loaded. Check the status message above and try again after correcting the issue.</td></tr>';
         return;
     }
-    const requests = (remoteAssistanceRequests || []).slice().sort((a, b) => String(b.submittedAt).localeCompare(String(a.submittedAt)));
+    const allRequests = (remoteAssistanceRequests || []).slice().sort((a, b) => String(b.submittedAt).localeCompare(String(a.submittedAt)));
+    const requestFilter = document.getElementById('assistanceRequestFilter')?.value || 'all';
+    const requestQuery = (document.getElementById('assistanceRequestSearch')?.value || '').trim().toLocaleLowerCase();
+    const requests = allRequests.filter(request => {
+        const matchesStatus = requestFilter === 'all' || request.status === requestFilter;
+        const searchable = [request.name, request.contact, request.type, request.quantity, request.description].join(' ').toLocaleLowerCase();
+        return matchesStatus && (!requestQuery || searchable.includes(requestQuery));
+    });
+    const requestCounts = ['Pending', 'Approved', 'Declined'].map(status =>
+        `${status}: ${allRequests.filter(request => request.status === status).length}`
+    ).join(' · ');
+    const requestStatus = document.getElementById('assistanceRequestStatus');
+    if (requestStatus) requestStatus.textContent = `${requests.length} shown of ${allRequests.length} assistance requests · ${requestCounts}`;
     tbody.innerHTML = requests.map(request => {
         const submitted = request.submittedAt ? new Date(request.submittedAt).toLocaleString('en-PH') : '—';
         const actions = canReview
@@ -1383,7 +1723,7 @@ function renderAssistanceRequests() {
             <td>${escapeHtml(request.type)}</td>
             <td>${escapeHtml(request.quantity || '—')}</td>
             <td>${escapeHtml(request.description)}</td>
-            <td>${actions}</td>
+            <td>${actions}${renderReplyLink(request.contact, `KBK assistance request ${request.id}`)}</td>
         </tr>`;
     }).join('') || '<tr><td colspan="7" class="empty-table">No assistance requests have been submitted.</td></tr>';
     tbody.querySelectorAll('[data-request-action]').forEach(button => {
@@ -1500,28 +1840,122 @@ async function submitPublicFeedback(event) {
         status.textContent = `Online message delivery is not available. Please email KBK directly at ${KBK_CONTACT_EMAIL}.`;
         return;
     }
+    const turnstileToken = getPublicSubmissionToken(form);
+    if (!turnstileToken) {
+        status.dataset.error = 'true';
+        status.textContent = 'Complete the security check before sending your message.';
+        return;
+    }
 
     submitButton.disabled = true;
     form.setAttribute('aria-busy', 'true');
     status.textContent = 'Sending your message securely…';
     try {
-        const { error } = await supabaseClient.from('kbk_public_feedback_messages').insert({
-            requester_name: entry.name || null,
-            contact: entry.contact,
-            subject: entry.subject,
-            message: entry.message
+        const { error } = await supabaseClient.functions.invoke('public-submit', {
+            body: {
+                type: 'feedback',
+                token: turnstileToken,
+                request: {
+                    requester_name: entry.name || null,
+                    contact: entry.contact,
+                    subject: entry.subject,
+                    message: entry.message
+                }
+            }
         });
-        if (error) throw new Error(error.message);
+        if (error) throw new Error(await getPublicSubmissionError(error, 'We could not save your message. Please try again later.'));
         form.reset();
         status.dataset.error = 'false';
-        status.textContent = 'Your message was delivered to KBK’s shared admin inbox. This does not send an email notification.';
+        status.textContent = 'Your message was saved in KBK’s shared admin inbox.';
     } catch (error) {
         console.error('Unable to send public feedback.', error);
         status.dataset.error = 'true';
-        status.textContent = `We could not confirm delivery. Please email KBK directly at ${KBK_CONTACT_EMAIL} before resubmitting to avoid a duplicate.`;
+        status.textContent = `${error.message} If you need help, email KBK at ${KBK_CONTACT_EMAIL}.`;
     } finally {
-        submitButton.disabled = false;
+        resetPublicSubmissionChallenge(form);
         form.removeAttribute('aria-busy');
+    }
+}
+
+function getPublicSubmissionToken(form) {
+    return form.querySelector('input[name="cf-turnstile-response"]')?.value || '';
+}
+
+async function getPublicSubmissionError(error, fallback) {
+    try {
+        const response = error?.context?.clone?.();
+        if (response) {
+            const body = await response.json();
+            if (typeof body?.error === 'string') return body.error;
+        }
+    } catch {
+        // Use a safe generic message when the function response is not readable.
+    }
+    return fallback;
+}
+
+function resetPublicSubmissionChallenge(form) {
+    const widgetId = turnstileWidgets.get(form.id);
+    if (widgetId && window.turnstile) window.turnstile.reset(widgetId);
+    const submitButton = form.querySelector('button[type="submit"]');
+    if (submitButton) submitButton.disabled = true;
+}
+
+async function initializePublicSubmissionProtection() {
+    const forms = ['publicAssistanceForm', 'publicFeedbackForm']
+        .map(id => document.getElementById(id))
+        .filter(Boolean);
+    if (!forms.length) return;
+    const siteKey = window.KBK_SUPABASE_CONFIG?.turnstileSiteKey;
+    const hasUsableSiteKey = typeof siteKey === 'string' && siteKey.trim() && !siteKey.includes('YOUR_');
+    for (const form of forms) {
+        const button = form.querySelector('button[type="submit"]');
+        if (button) button.disabled = true;
+    }
+    if (!hasUsableSiteKey) {
+        forms.forEach(form => {
+            const message = form.querySelector('.request-form-message');
+            if (message) {
+                message.dataset.error = 'true';
+                message.textContent = 'Online submissions are temporarily unavailable while KBK configures its security check. Please contact KBK directly.';
+            }
+        });
+        return;
+    }
+    try {
+        if (!turnstileScriptPromise) {
+            turnstileScriptPromise = loadScript('https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit');
+        }
+        await turnstileScriptPromise;
+        for (const form of forms) {
+            const container = document.createElement('div');
+            container.className = 'public-turnstile-widget';
+            const button = form.querySelector('button[type="submit"]');
+            form.insertBefore(container, button);
+            const widgetId = window.turnstile.render(container, {
+                sitekey: siteKey,
+                callback: () => { if (button) button.disabled = false; },
+                'expired-callback': () => { if (button) button.disabled = true; },
+                'error-callback': () => {
+                    if (button) button.disabled = true;
+                    const message = form.querySelector('.request-form-message');
+                    if (message) {
+                        message.dataset.error = 'true';
+                        message.textContent = 'The security check could not load. Refresh the page and try again.';
+                    }
+                }
+            });
+            turnstileWidgets.set(form.id, widgetId);
+        }
+    } catch (error) {
+        console.error('Unable to initialize public form security checks.', error);
+        forms.forEach(form => {
+            const message = form.querySelector('.request-form-message');
+            if (message) {
+                message.dataset.error = 'true';
+                message.textContent = 'The security check could not load. Refresh the page or contact KBK directly.';
+            }
+        });
     }
 }
 
@@ -1536,21 +1970,49 @@ function renderPublicFeedback() {
         tbody.innerHTML = '<tr><td colspan="6" class="empty-table">The shared contact inbox could not be loaded. Check the status message above and confirm the latest database setup has been applied.</td></tr>';
         return;
     }
-    const rows = remoteFeedbackMessages.slice().sort((a, b) => String(b.submittedAt).localeCompare(String(a.submittedAt)));
+    const allRows = remoteFeedbackMessages.slice().sort((a, b) => String(b.submittedAt).localeCompare(String(a.submittedAt)));
+    const feedbackFilter = document.getElementById('publicFeedbackFilter')?.value || 'all';
+    const feedbackQuery = (document.getElementById('publicFeedbackSearch')?.value || '').trim().toLocaleLowerCase();
+    const rows = allRows.filter(item => {
+        const matchesStatus = feedbackFilter === 'all' || item.status === feedbackFilter;
+        const searchable = [item.name, item.contact, item.subject, item.message].join(' ').toLocaleLowerCase();
+        return matchesStatus && (!feedbackQuery || searchable.includes(feedbackQuery));
+    });
+    const feedbackCounts = ['New', 'Replied', 'Resolved'].map(status =>
+        `${status}: ${allRows.filter(item => item.status === status).length}`
+    ).join(' · ');
+    const feedbackStatus = document.getElementById('publicFeedbackStatus');
+    if (feedbackStatus) feedbackStatus.textContent = `${rows.length} shown of ${allRows.length} contact messages · ${feedbackCounts}`;
     tbody.innerHTML = rows.map(item => `<tr>
         <td>${escapeHtml(item.submittedAt ? new Date(item.submittedAt).toLocaleString('en-PH') : '—')}</td>
         <td>${escapeHtml(item.name || 'Not provided')}</td><td>${escapeHtml(item.contact)}</td>
         <td>${escapeHtml(item.subject)}</td><td>${escapeHtml(item.message)}</td>
-        <td><div class="action-group"><span class="badge ${item.status === 'Reviewed' ? 'badge-success' : 'badge-pending'}">${escapeHtml(item.status)}</span>${item.status === 'New' ? `<button class="btn btn-outline btn-xs" type="button" data-feedback-reviewed="${Number(item.id)}">Mark reviewed</button>` : ''}<button class="btn btn-danger btn-xs" type="button" data-feedback-delete="${Number(item.id)}">Delete</button></div></td>
+        <td><div class="action-group">${renderReplyLink(item.contact, `Re: ${item.subject}`)}<select class="form-control" aria-label="Status for ${escapeHtml(item.subject)}" data-feedback-status="${Number(item.id)}"><option ${item.status === 'New' ? 'selected' : ''}>New</option><option ${item.status === 'Replied' ? 'selected' : ''}>Replied</option><option ${item.status === 'Resolved' ? 'selected' : ''}>Resolved</option></select><button class="btn btn-danger btn-xs" type="button" data-feedback-delete="${Number(item.id)}">Delete</button></div></td>
     </tr>`).join('') || '<tr><td colspan="6" class="empty-table">No contact messages have been received.</td></tr>';
-    tbody.querySelectorAll('[data-feedback-reviewed]').forEach(button => button.addEventListener('click', () => {
-        void updateRemoteFeedbackMessage(Number(button.dataset.feedbackReviewed), { status: 'Reviewed' });
+    tbody.querySelectorAll('[data-feedback-status]').forEach(select => select.addEventListener('change', () => {
+        void updateRemoteFeedbackMessage(Number(select.dataset.feedbackStatus), { status: select.value });
     }));
     tbody.querySelectorAll('[data-feedback-delete]').forEach(button => button.addEventListener('click', () => {
         const item = remoteFeedbackMessages.find(record => Number(record.id) === Number(button.dataset.feedbackDelete));
         if (!item || !window.confirm(`Permanently delete the message “${item.subject}”?`)) return;
         void deleteRemoteFeedbackMessage(item);
     }));
+}
+
+function renderReplyLink(contact, subject) {
+    const value = String(contact || '').trim();
+    const email = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+    if (email) {
+        const encodedEmail = value.split('@').map(encodeURIComponent).join('@');
+        const href = `mailto:${encodedEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent('Hello,\n\nThank you for contacting KBK. We are following up on your submission.\n\nKBK')}`;
+        return `<a class="btn btn-outline btn-xs" href="${escapeHtml(href)}">Reply by email</a>`;
+    }
+    const digits = value.replace(/\D/g, '');
+    if (digits.length >= 7 && digits.length <= 15) {
+        const href = `sms:${value.replace(/[^\d+]/g, '')}?body=${encodeURIComponent('Hello, this is KBK following up on your message.')}`;
+        return `<a class="btn btn-outline btn-xs" href="${escapeHtml(href)}">Reply by SMS</a>`;
+    }
+    return '';
 }
 
 async function updateRemoteFeedbackMessage(id, changes) {
@@ -1565,11 +2027,12 @@ async function updateRemoteFeedbackMessage(id, changes) {
         if (!data) throw new Error('This message could not be found or you no longer have permission to update it.');
         const item = remoteFeedbackMessages.find(record => Number(record.id) === Number(id));
         if (item) item.status = data.status;
-        logActivity(`Reviewed public feedback ${id}`);
+        logActivity(`Updated public feedback ${id} status to ${data.status}`);
         renderPublicFeedback();
     } catch (error) {
         console.error('Unable to update public feedback status.', error);
         window.alert(`Unable to update the contact message: ${error.message}`);
+        renderPublicFeedback();
     }
 }
 
@@ -1730,15 +2193,10 @@ function renderSiteNavigation() {
         projects: '<rect x="3" y="4" width="8" height="7" rx="1"/><rect x="13" y="4" width="8" height="7" rx="1"/><rect x="3" y="13" width="8" height="7" rx="1"/><rect x="13" y="13" width="8" height="7" rx="1"/>',
         distribution: '<path d="M4 12h15m-6-6 6 6-6 6M4 6v12"/>',
         news: '<path d="M5 4h14v16H5zM8 8h8m-8 4h8m-8 4h5"/>',
-        assistance: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><path d="m5.6 5.6 3.6 3.6m5.6 5.6 3.6 3.6m0-12.8-3.6 3.6m-5.6 5.6-3.6 3.6"/>',
+        assistance: '<circle cx="12" cy="12" r="9"/><path d="M9.6 9a2.5 2.5 0 1 1 4.3 1.7c-.9.8-1.9 1.2-1.9 2.8M12 17h.01"/>',
         contact: '<path d="M4 5h16v12H9l-5 4zM8 9h8m-8 4h5"/>'
     };
-    const publicIconImages = {
-        assistance: 'photo.png/get-help-icon.png'
-    };
-    const publicIcon = name => `<span class="public-nav-icon" aria-hidden="true">${publicIconImages[name]
-        ? `<img class="public-nav-icon-image public-nav-icon-image-${name}" src="${publicIconImages[name]}" alt="">`
-        : `<svg viewBox="0 0 24 24">${publicIcons[name]}</svg>`}</span>`;
+    const publicIcon = name => `<span class="public-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24">${publicIcons[name]}</svg></span>`;
     const publicGroups = [
         { label: 'Home', href: 'index.html', icon: 'home' },
         { label: 'About KBK', href: 'about.html', icon: 'about' },
@@ -1865,7 +2323,7 @@ function insertAdminPageGuide() {
         'projects.html': {
             summary: 'Create and maintain projects that connect donations, budgets, beneficiaries, and distributions.',
             tips: [
-                'Use clear project names and descriptions so staff and donors can understand the purpose.',
+                'Use clear project names and descriptions so you and donors can understand the purpose.',
                 'Keep project status and budget accurate; active projects can appear on the public campaign page.',
                 'Link relevant donation and distribution records to the correct project.'
             ]
@@ -1964,25 +2422,42 @@ function renderPublicPageLayout(publicMenu) {
     const body = document.body;
     const nav = publicMenu.closest('.navbar');
     if (!nav) return;
+    const main = document.querySelector('main');
+    if (main) {
+        if (!main.id) main.id = 'main-content';
+        if (!document.querySelector('.skip-link')) {
+            const skipLink = document.createElement('a');
+            skipLink.className = 'skip-link';
+            skipLink.href = `#${main.id}`;
+            skipLink.textContent = 'Skip to main content';
+            body.prepend(skipLink);
+        }
+    }
     if (!body.classList.contains('public-dashboard-page') && !body.classList.contains('public-page-layout')) {
         const main = document.querySelector('main');
         if (!main) return;
 
-        const pageHero = [...body.children].find(element => element.classList.contains('hero'));
+        const editorialPage = body.classList.contains('public-editorial-page');
+        const pageHero = [...body.children].find(element =>
+            element.classList.contains('hero') || element.classList.contains('public-page-hero')
+        );
         if (pageHero) main.prepend(pageHero);
 
-        const heading = pageHero?.querySelector('h1') || main.querySelector('h1, .section-title');
-        const pageHeader = document.createElement('header');
-        pageHeader.className = 'public-page-header';
-        if (heading) {
-            const subtitle = heading.nextElementSibling;
-            pageHeader.append(heading);
-            if (subtitle?.tagName === 'P') pageHeader.append(subtitle);
-            if (pageHero && !pageHero.querySelector('h1, p, a, button')) pageHero.remove();
-        } else {
-            const fallbackHeading = document.createElement('h1');
-            fallbackHeading.textContent = document.title.split(/[—|]/)[0].trim();
-            pageHeader.append(fallbackHeading);
+        let pageHeader = null;
+        if (!editorialPage) {
+            const heading = pageHero?.querySelector('h1') || main.querySelector('h1, .section-title');
+            pageHeader = document.createElement('header');
+            pageHeader.className = 'public-page-header';
+            if (heading) {
+                const subtitle = heading.nextElementSibling;
+                pageHeader.append(heading);
+                if (subtitle?.tagName === 'P') pageHeader.append(subtitle);
+                if (pageHero && !pageHero.querySelector('h1, p, a, button')) pageHero.remove();
+            } else {
+                const fallbackHeading = document.createElement('h1');
+                fallbackHeading.textContent = document.title.split(/[—|]/)[0].trim();
+                pageHeader.append(fallbackHeading);
+            }
         }
 
         const content = document.createElement('div');
@@ -1991,10 +2466,19 @@ function renderPublicPageLayout(publicMenu) {
         nav.classList.add('public-sidebar');
         nav.setAttribute('aria-label', 'Public navigation');
         body.insertBefore(content, main);
-        content.append(pageHeader, main);
+        if (pageHeader) content.append(pageHeader);
+        content.append(main);
 
         const footer = [...body.children].find(element => element.tagName === 'FOOTER');
         if (footer) content.append(footer);
+    }
+    const publicFooter = document.querySelector('.footer');
+    if (publicFooter && !publicFooter.querySelector('.legal-footer-links')) {
+        const policyNav = document.createElement('nav');
+        policyNav.className = 'legal-footer-links';
+        policyNav.setAttribute('aria-label', 'Privacy and donation information');
+        policyNav.innerHTML = '<a href="privacy.html">Privacy Notice</a><a href="donate.html">Donation Information</a>';
+        publicFooter.append(policyNav);
     }
     initializePublicNavigation(nav);
 }
@@ -2830,10 +3314,14 @@ function renderDonorTable() {
             <td><span class="badge-${donor.status === 'active' ? 'active' : 'inactive'}">${capitalize(donor.status || 'active')}</span></td>
             <td>
                 <div class="action-group">
-                    <button type="button" class="btn btn-outline btn-xs" data-action="view" data-donor-id="${donor.id}">View</button>
-                    ${getUserRole() === 'staff' ? '<span class="badge badge-pending">View Only</span>' : `<button type="button" class="btn btn-outline btn-xs" data-action="edit" data-donor-id="${donor.id}">Edit</button>
-                    <button type="button" class="btn btn-outline btn-xs" data-action="toggle" data-donor-id="${donor.id}">${donor.status === 'active' ? 'Deactivate' : 'Activate'}</button>
-                    <button type="button" class="btn btn-danger btn-xs" data-action="delete" data-donor-id="${donor.id}">Delete</button>`}
+                    <div class="donor-action-group" aria-label="Profile actions">
+                        <button type="button" class="btn btn-outline btn-xs" data-action="view" data-donor-id="${escapeHtml(String(donor.id))}" title="Show this donor’s profile and donation history">View profile</button>
+                        ${getUserRole() === 'staff' ? '<span class="badge badge-pending">View only</span>' : '<button type="button" class="btn btn-outline btn-xs" data-action="edit" data-donor-id="' + escapeHtml(String(donor.id)) + '" title="Load this donor’s details into the edit form">Edit details</button>'}
+                    </div>
+                    ${getUserRole() === 'staff' ? '' : `<div class="donor-action-group donor-action-group--manage" aria-label="Donor status and record actions">
+                        <button type="button" class="btn btn-outline btn-xs" data-action="toggle" data-donor-id="${escapeHtml(String(donor.id))}">${donor.status === 'active' ? 'Deactivate' : 'Activate'}</button>
+                        <button type="button" class="btn btn-danger btn-xs" data-action="delete" data-donor-id="${escapeHtml(String(donor.id))}">Delete</button>
+                    </div>`}
                 </div>
             </td>
         </tr>
@@ -2845,7 +3333,7 @@ function renderDonorTable() {
         return;
     }
 
-    const currentSelection = Number(document.getElementById('donorId')?.value || 0);
+    const currentSelection = document.getElementById('donorId')?.value || '';
     if (currentSelection) {
         showDonorProfile(currentSelection);
     } else {
@@ -2854,8 +3342,8 @@ function renderDonorTable() {
 
     tbody.querySelectorAll('[data-action]').forEach(btn => {
         btn.addEventListener('click', () => {
-            const donorId = Number(btn.dataset.donorId);
-            const donor = getDonors().find(item => item.id === donorId);
+            const donorId = btn.dataset.donorId;
+            const donor = getDonors().find(item => String(item.id) === donorId);
             if (!donor) return;
 
             const action = btn.dataset.action;
@@ -2863,6 +3351,7 @@ function renderDonorTable() {
                 populateDonorForm(donor);
             } else if (action === 'view') {
                 showDonorProfile(donor.id);
+                document.getElementById('donorProfileCard')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
             } else if (action === 'toggle') {
                 toggleDonorStatus(donor.id);
             } else if (action === 'delete') {
@@ -2941,6 +3430,11 @@ function populateDonorForm(donor) {
         if (field) field.value = value;
     });
 
+    const submitButton = document.querySelector('#donorForm button[type="submit"]');
+    if (submitButton) submitButton.textContent = 'Save changes';
+    const formStatus = document.getElementById('donorFormStatus');
+    if (formStatus) formStatus.textContent = `Editing ${donor.name}. Update the fields, then select Save changes.`;
+
     const formTitle = document.getElementById('donorForm');
     if (formTitle) formTitle.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
@@ -2948,12 +3442,16 @@ function populateDonorForm(donor) {
 function resetDonorForm() {
     document.getElementById('donorForm')?.reset();
     document.getElementById('donorId').value = '';
+    const submitButton = document.querySelector('#donorForm button[type="submit"]');
+    if (submitButton) submitButton.textContent = 'Save donor';
+    const formStatus = document.getElementById('donorFormStatus');
+    if (formStatus) formStatus.textContent = 'Add a donor or choose Edit details from the list below.';
 }
 
 function toggleDonorStatus(donorId) {
     if (getUserRole() === 'staff') return;
     const donors = getDonors();
-    const donor = donors.find(item => item.id === donorId);
+    const donor = donors.find(item => String(item.id) === String(donorId));
     if (!donor) return;
 
     donor.status = donor.status === 'active' ? 'inactive' : 'active';
@@ -2971,7 +3469,7 @@ function toggleDonorStatus(donorId) {
 function deleteDonor(donorId) {
     if (getUserRole() === 'staff') return;
     const donors = getDonors();
-    const donor = donors.find(item => item.id === donorId);
+    const donor = donors.find(item => String(item.id) === String(donorId));
     if (!donor || !window.confirm(`Delete donor profile for ${donor.name}? Donation records will remain with their saved donor name, but the profile link will be removed.`)) return;
     try {
         const donations = getDonations();
@@ -2982,7 +3480,7 @@ function deleteDonor(donorId) {
             changedDonations = true;
         });
         if (changedDonations) saveDonations(donations);
-        saveDonors(donors.filter(item => item.id !== donorId));
+        saveDonors(donors.filter(item => String(item.id) !== String(donorId)));
     } catch (error) {
         console.error('Unable to delete donor.', error);
         window.alert('Unable to delete this donor in browser storage.');
@@ -2994,7 +3492,7 @@ function deleteDonor(donorId) {
 }
 
 function showDonorProfile(donorId) {
-    const donor = getDonors().find(item => item.id === donorId);
+    const donor = getDonors().find(item => String(item.id) === String(donorId));
     const profileCard = document.getElementById('donorProfileCard');
     if (!donor || !profileCard) return;
 
@@ -3034,7 +3532,7 @@ function syncDonorFromDonation(donation) {
 function handleDonorSubmit(e) {
     e.preventDefault();
     if (getUserRole() === 'staff') return;
-    const donorId = Number(document.getElementById('donorId').value || 0);
+    const donorId = document.getElementById('donorId').value || '';
     const donors = getDonors();
     const donorData = {
         name: document.getElementById('donorFullName').value.trim(),
@@ -3049,7 +3547,7 @@ function handleDonorSubmit(e) {
     if (!donorData.name) return;
 
     if (donorId) {
-        const index = donors.findIndex(item => item.id === donorId);
+        const index = donors.findIndex(item => String(item.id) === donorId);
         if (index >= 0) {
             donors[index] = { ...donors[index], ...donorData };
         }
@@ -3310,12 +3808,17 @@ function renderProjectTable() {
     tbody.innerHTML = projects.map(project => {
         const projectDonations = donations.filter(item => Number(item.projectId) === project.id);
         const donated = projectDonations.reduce((sum, item) => sum + (item.type === 'cash' ? Number(item.amount || 0) : 0), 0);
-        const projectExpenses = expenses.filter(item => Number(item.projectId) === project.id).reduce((sum, item) => sum + Number(item.amount || 0), 0);
+        const verifiedExpenses = expenses
+            .filter(item => Number(item.projectId) === project.id && item.verified === true)
+            .reduce((sum, item) => sum + Number(item.amount || 0), 0);
+        const pendingExpenses = expenses
+            .filter(item => Number(item.projectId) === project.id && item.verified !== true)
+            .reduce((sum, item) => sum + Number(item.amount || 0), 0);
         const beneficiaries = new Set(distributions.filter(item => Number(item.projectId) === project.id).map(item => item.beneficiaryId)).size;
         const distributionCount = distributions.filter(item => Number(item.projectId) === project.id).length;
         return `<tr>
             <td><strong>${escapeHtml(project.name)}</strong><div class="muted-text">${escapeHtml(project.description || '')}</div></td>
-            <td>${peso(project.budget)}</td><td>${peso(donated)}</td><td>${peso(projectExpenses)}</td><td>${beneficiaries}</td><td>${distributionCount}</td>
+            <td>${peso(project.budget)}</td><td>${peso(donated)}</td><td><strong>${peso(verifiedExpenses)} verified</strong><span class="muted-text">${peso(pendingExpenses)} pending</span></td><td>${beneficiaries}</td><td>${distributionCount}</td>
             <td><span class="badge ${project.status === 'Active' ? 'badge-success' : 'badge-pending'}">${escapeHtml(project.status)}</span></td>
             <td>${getUserRole() === 'staff' ? 'View only' : `<div class="action-group"><button class="btn btn-outline btn-xs" data-project-toggle="${project.id}">${project.status === 'Active' ? 'Pause' : 'Activate'}</button><button class="btn btn-outline btn-xs" data-project-edit="${project.id}">Edit</button><button class="btn btn-danger btn-xs" data-project-delete="${project.id}">Delete</button></div>`}</td>
         </tr>`;
@@ -3608,24 +4111,124 @@ function handleDistributionSubmit(event) {
 }
 
 /* ---------- EXPENSE MANAGEMENT ---------- */
+function updateExpenseFundingPreview() {
+    const preview = document.getElementById('expenseFundingPreview');
+    if (!preview) return;
+    const projectId = Number(document.getElementById('expenseProject')?.value);
+    const amount = Number(document.getElementById('expenseAmount')?.value);
+    if (!projectId) {
+        preview.classList.remove('is-over-budget');
+        preview.textContent = 'Choose a project to preview its available funds.';
+        return;
+    }
+
+    const funding = getProjectFundingSummary(projectId);
+    const amountToRecord = Number.isFinite(amount) && amount > 0 ? amount : 0;
+    const estimatedBalance = funding.available - amountToRecord;
+    const project = getProjects().find(item => Number(item.id) === projectId);
+    preview.classList.toggle('is-over-budget', estimatedBalance < 0);
+    preview.innerHTML = `<strong>${escapeHtml(project?.name || 'Selected project')}</strong>
+        <span>Allocated funds: ${peso(funding.allocated)}</span>
+        <span>Available after verified expenses: ${peso(funding.available)}</span>
+        <span>Estimated balance after this expense is verified: ${peso(estimatedBalance)}</span>
+        ${estimatedBalance < 0 ? '<span class="expense-funding-warning">This expense would exceed the currently available allocated funds.</span>' : ''}
+        <small>Estimate only. Pending expenses are not counted until verified.</small>`;
+}
+
+async function deleteStoredExpenseReceipt(proof) {
+    if (!proof?.path) return;
+    const { error } = await supabaseClient.storage
+        .from(DONATION_RECEIPTS_BUCKET)
+        .remove([proof.path]);
+    if (error) throw new Error(`Unable to remove the expense receipt: ${error.message}`);
+}
+
+async function replaceExpenseReceipt(expenseId, fileInput) {
+    if (getUserRole() !== 'admin') return;
+    const file = fileInput.files?.[0];
+    if (!file) return;
+    const expenses = getExpenses();
+    const expense = expenses.find(item => Number(item.id) === Number(expenseId));
+    if (!expense) {
+        window.alert('This expense record no longer exists. Refresh the page and try again.');
+        fileInput.value = '';
+        return;
+    }
+
+    let uploadedProof = null;
+    const previousProof = expense.proof;
+    const originalStorage = localStorage.getItem(EXPENSE_KEY);
+    try {
+        uploadedProof = await uploadExpenseReceipt(file, expense.id);
+        expense.proof = uploadedProof;
+        await saveStoredList(EXPENSE_KEY, expenses);
+    } catch (error) {
+        console.error('Unable to upload or save the expense receipt.', error);
+        if (originalStorage !== null) localStorage.setItem(EXPENSE_KEY, originalStorage);
+        else localStorage.removeItem(EXPENSE_KEY);
+        if (uploadedProof) {
+            try {
+                await deleteStoredExpenseReceipt(uploadedProof);
+            } catch (cleanupError) {
+                console.error('Unable to remove the unused expense receipt upload.', cleanupError);
+                showSystemStatus(`Receipt upload failed, and the unused file could not be removed: ${cleanupError.message}`, true);
+            }
+        }
+        window.alert(`Unable to save the expense receipt: ${error.message}`);
+        fileInput.value = '';
+        return;
+    }
+
+    if (previousProof?.path) {
+        try {
+            await deleteStoredExpenseReceipt(previousProof);
+        } catch (error) {
+            console.error('Expense was saved, but its previous receipt could not be removed.', error);
+            showSystemStatus(`Expense receipt was replaced, but the old private file could not be removed: ${error.message}`, true);
+        }
+    }
+    logActivity(`Uploaded expense receipt: ${expense.description}`);
+    fileInput.value = '';
+    renderExpenseTable();
+}
+
 function renderExpenseTable() {
     const tbody = document.getElementById('expenseTableBody');
     if (!tbody) return;
     const projects = getProjects();
     const expenses = getExpenses().sort((a, b) => b.date.localeCompare(a.date));
-    tbody.innerHTML = expenses.map(expense => {
+    const expenseRows = expenses.map(expense => {
         const project = projects.find(item => item.id === Number(expense.projectId));
-        const receipt = expense.receipt ? `<a href="${escapeHtml(expense.receipt)}" target="_blank" rel="noopener">View reference</a>` : escapeHtml(expense.reference || '—');
+        const receipt = [
+            getUserRole() === 'admin' && expense.proof?.path ? `<button class="btn btn-outline btn-xs" type="button" data-expense-receipt="${escapeHtml(expense.proof.path)}">View receipt</button>` : '',
+            escapeHtml(expense.reference || '')
+        ].filter(Boolean).join('<br>') || '—';
         const verified = expense.verified === true;
-        const status = normalizeDonationStatus(d.status) === 'rejected'
-            ? '<span class="badge badge-rejected">Rejected</span>'
-            : verified ? '<span class="badge badge-success">Verified</span>' : '<span class="badge badge-pending">Pending verification</span>';
-        const action = getUserRole() === 'staff' ? '<span class="badge badge-pending">View only</span>' : `<div class="action-group"><button class="btn ${verified ? 'btn-outline' : 'btn-primary'} btn-xs" type="button" data-expense-verify="${Number(expense.id)}">${verified ? 'Mark Pending' : 'Verify'}</button><button class="btn btn-outline btn-xs" type="button" data-expense-edit="${Number(expense.id)}">Edit</button><button class="btn btn-danger btn-xs" type="button" data-expense-delete="${Number(expense.id)}">Delete</button></div>`;
+        const status = verified
+            ? '<span class="badge badge-success">Verified</span>'
+            : '<span class="badge badge-pending">Pending verification</span>';
+        const action = getUserRole() === 'staff' ? '<span class="badge badge-pending">View only</span>' : `<div class="action-group"><button class="btn btn-outline btn-xs" type="button" data-expense-upload="${Number(expense.id)}">${expense.proof?.path ? 'Replace receipt' : 'Upload receipt'}</button><button class="btn ${verified ? 'btn-outline' : 'btn-primary'} btn-xs" type="button" data-expense-verify="${Number(expense.id)}">${verified ? 'Mark Pending' : 'Verify'}</button><button class="btn btn-outline btn-xs" type="button" data-expense-edit="${Number(expense.id)}">Edit</button><button class="btn btn-danger btn-xs" type="button" data-expense-delete="${Number(expense.id)}">Delete</button></div>`;
         return `<tr><td>${escapeHtml(expense.description)}</td><td>${peso(expense.amount)}</td><td>${formatDate(expense.date)}</td><td>${escapeHtml(project?.name || '—')}</td><td>${escapeHtml(expense.category)}</td><td>${receipt}</td><td>${status}</td><td>${action}</td></tr>`;
-    }).join('') || '<tr><td colspan="8" class="empty-table">No expenses recorded.</td></tr>';
+    }).join('');
+    tbody.innerHTML = expenseRows || '<tr><td colspan="8" class="empty-table">No expenses recorded.</td></tr>';
     setText('expenseRecordCount', expenses.length);
     setText('expenseTotal', peso(expenses.reduce((sum, item) => sum + Number(item.amount || 0), 0)));
     setText('expenseVerifiedTotal', peso(expenses.filter(item => item.verified === true).reduce((sum, item) => sum + Number(item.amount || 0), 0)));
+    updateExpenseFundingPreview();
+    tbody.querySelectorAll('[data-expense-receipt]').forEach(button => button.addEventListener('click', async () => {
+        try {
+            await openExpenseReceipt(button.dataset.expenseReceipt);
+        } catch (error) {
+            console.error('Unable to open expense receipt.', error);
+            window.alert(error.message);
+        }
+    }));
+    tbody.querySelectorAll('[data-expense-upload]').forEach(button => button.addEventListener('click', () => {
+        const fileInput = document.getElementById('expenseReceiptReplace');
+        if (!fileInput) return;
+        fileInput.dataset.expenseId = button.dataset.expenseUpload;
+        fileInput.click();
+    }));
     tbody.querySelectorAll('[data-expense-verify]').forEach(button => button.addEventListener('click', () => {
         if (getUserRole() === 'staff') return;
         const records = getExpenses();
@@ -3641,6 +4244,8 @@ function renderExpenseTable() {
         }
         logActivity(`${expense.verified ? 'Verified' : 'Reopened'} expense: ${expense.description}`);
         renderExpenseTable();
+        renderProjectTable();
+        renderAdminOverview();
         renderPublicPage();
     }));
     tbody.querySelectorAll('[data-expense-edit]').forEach(button => button.addEventListener('click', () => {
@@ -3673,52 +4278,109 @@ function renderExpenseTable() {
         }
         logActivity(`Updated expense and reset verification: ${updated.description}`);
         renderExpenseTable();
+        renderProjectTable();
+        renderAdminOverview();
         renderPublicPage();
     }));
-    tbody.querySelectorAll('[data-expense-delete]').forEach(button => button.addEventListener('click', () => {
+    tbody.querySelectorAll('[data-expense-delete]').forEach(button => button.addEventListener('click', async () => {
         if (getUserRole() === 'staff') return;
         const records = getExpenses();
         const expense = records.find(item => Number(item.id) === Number(button.dataset.expenseDelete));
         if (!expense || !window.confirm(`Delete expense "${expense.description}"?`)) return;
+        const originalStorage = localStorage.getItem(EXPENSE_KEY);
         try {
-            saveStoredList(EXPENSE_KEY, records.filter(item => item.id !== expense.id));
+            await saveStoredList(EXPENSE_KEY, records.filter(item => item.id !== expense.id));
         } catch (error) {
+            if (originalStorage !== null) localStorage.setItem(EXPENSE_KEY, originalStorage);
+            else localStorage.removeItem(EXPENSE_KEY);
             console.error('Unable to delete expense.', error);
             window.alert('Unable to delete this expense in browser storage.');
             return;
         }
+        if (expense.proof?.path) {
+            try {
+                await deleteStoredExpenseReceipt(expense.proof);
+            } catch (error) {
+                console.error('Expense was deleted, but its receipt could not be removed.', error);
+                showSystemStatus(`Expense deleted, but its private receipt could not be removed: ${error.message}`, true);
+            }
+        }
         logActivity(`Deleted expense: ${expense.description}`);
         renderExpenseTable();
+        renderProjectTable();
+        renderAdminOverview();
         renderPublicPage();
     }));
 }
 
-function handleExpenseSubmit(event) {
+async function handleExpenseReceiptReplace(event) {
+    const input = event.currentTarget;
+    const expenseId = input.dataset.expenseId;
+    delete input.dataset.expenseId;
+    await replaceExpenseReceipt(expenseId, input);
+}
+
+async function handleExpenseSubmit(event) {
     event.preventDefault();
-    if (getUserRole() === 'staff') return;
+    if (getUserRole() === 'staff' || expenseSaveInProgress) return;
     const amount = Number(document.getElementById('expenseAmount').value);
     const description = document.getElementById('expenseDescription').value.trim();
     const date = document.getElementById('expenseDate').value;
     const category = document.getElementById('expenseCategory').value.trim();
     if (!description || !category || !Number.isFinite(amount) || amount <= 0 || !date) return;
+    const receiptFile = document.getElementById('expenseReceipt').files?.[0];
+    if (receiptFile && !DONATION_RECEIPT_TYPES.has(receiptFile.type)) {
+        window.alert('Choose a PDF, JPEG, PNG, or WebP receipt.');
+        return;
+    }
+    if (receiptFile && (receiptFile.size <= 0 || receiptFile.size > 512 * 1024)) {
+        window.alert('Receipt files must be between 1 byte and 512 KB.');
+        return;
+    }
     const expenses = getExpenses();
-    expenses.push({
+    const expense = {
         id: nextId(expenses), description, amount, date, category,
         projectId: Number(document.getElementById('expenseProject').value) || null,
         reference: document.getElementById('expenseReference').value.trim(),
-        receipt: '',
         verified: false
-    });
+    };
+    let uploadedProof = null;
+    const originalStorage = localStorage.getItem(EXPENSE_KEY);
+    const submitButton = event.currentTarget.querySelector('button[type="submit"]');
+    expenseSaveInProgress = true;
+    if (submitButton) submitButton.disabled = true;
     try {
-        saveStoredList(EXPENSE_KEY, expenses);
+        if (receiptFile) {
+            uploadedProof = await uploadExpenseReceipt(receiptFile, expense.id);
+            expense.proof = uploadedProof;
+        }
+        expenses.push(expense);
+        await saveStoredList(EXPENSE_KEY, expenses);
     } catch (error) {
-        window.alert('Unable to save this expense in browser storage.');
+        console.error('Unable to record expense.', error);
+        if (originalStorage !== null) localStorage.setItem(EXPENSE_KEY, originalStorage);
+        else localStorage.removeItem(EXPENSE_KEY);
+        if (uploadedProof) {
+            try {
+                await deleteStoredExpenseReceipt(uploadedProof);
+            } catch (cleanupError) {
+                console.error('Unable to remove the unused expense receipt upload.', cleanupError);
+                showSystemStatus(`Expense save failed, and its unused receipt could not be removed: ${cleanupError.message}`, true);
+            }
+        }
+        window.alert(`Unable to save this expense: ${error.message}`);
         return;
+    } finally {
+        expenseSaveInProgress = false;
+        if (submitButton) submitButton.disabled = false;
     }
     logActivity(`Recorded expense: ${description} (${peso(amount)})`);
     document.getElementById('expenseForm').reset();
     document.getElementById('expenseDate').value = new Date().toISOString().slice(0, 10);
     renderExpenseTable();
+    renderProjectTable();
+    renderAdminOverview();
+    renderPublicPage();
 }
 
 /* ---------- REPORTS ---------- */
@@ -4000,7 +4662,7 @@ function downloadReport() {
 function renderAccounts() {
     const tbody = document.getElementById('accountTableBody');
     if (!tbody) return;
-    tbody.innerHTML = '<tr><td colspan="4" class="empty-table">User accounts are managed securely in Supabase Authentication. Ask a Supabase project administrator to create users and assign their roles.</td></tr>';
+    tbody.innerHTML = '<tr><td class="empty-table">Your administrator account is managed securely in Supabase Authentication. Passwords are never stored by this browser app.</td></tr>';
 }
 
 async function importLegacyBrowserData() {
@@ -4065,7 +4727,10 @@ async function handleLogin(e) {
     }
 
     const submit = document.getElementById('loginSubmit');
+    const originalSubmitText = submit.textContent;
     submit.disabled = true;
+    submit.setAttribute('aria-busy', 'true');
+    submit.textContent = 'Signing in…';
     try {
         const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password: pass });
         if (error) throw new Error(error.message);
@@ -4075,7 +4740,7 @@ async function handleLogin(e) {
             .eq('user_id', data.user.id)
             .maybeSingle();
         if (profileError) throw new Error(`Unable to verify your KBK account: ${profileError.message}`);
-        if (!profile || !profile.active || !['admin', 'staff'].includes(String(profile.role).toLowerCase())) {
+        if (!profile || !profile.active || String(profile.role).toLowerCase() !== 'admin') {
             await supabaseClient.auth.signOut();
             throw new Error('This account is not active for the KBK system. Contact an administrator.');
         }
@@ -4092,6 +4757,8 @@ async function handleLogin(e) {
         passwordInput.focus();
     } finally {
         submit.disabled = false;
+        submit.removeAttribute('aria-busy');
+        submit.textContent = originalSubmitText;
     }
 }
 
@@ -4106,7 +4773,7 @@ function toggleLoginPassword() {
 }
 
 function initializeLoginPage() {
-    if (isLoggedIn() && ['admin', 'staff'].includes(getUserRole())) {
+    if (isLoggedIn() && getUserRole() === 'admin') {
         window.location.replace('dashboard.html');
         return;
     }
@@ -4218,6 +4885,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     await initializeSupabaseForPage(page);
 
     if (page === 'public') {
+        await loadPublicTransparencyEvidence();
         renderPublicPage();
         window.addEventListener('storage', event => {
             const publicDataKeys = [STORAGE_KEY, PROJECT_KEY, DISTRIBUTION_KEY, EXPENSE_KEY, BENEFICIARY_KEY, INVENTORY_KEY];
@@ -4226,6 +4894,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
         document.getElementById('publicAssistanceForm')?.addEventListener('submit', handlePublicAssistanceSubmit);
         document.getElementById('publicFeedbackForm')?.addEventListener('submit', handlePublicFeedbackSubmit);
+        void initializePublicSubmissionProtection();
         document.querySelectorAll('.category-card').forEach(card => {
             card.addEventListener('click', () => selectCategory(card.dataset.category));
         });
@@ -4248,21 +4917,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             welcome.textContent = section;
         }
 
-        const addBtn = document.getElementById('openAddModalBtn');
-        const addLink = document.getElementById('openAddModal');
-        if (role === 'staff') {
-            addBtn?.setAttribute('disabled', 'disabled');
-            addBtn?.setAttribute('aria-disabled', 'true');
-            addBtn?.style.setProperty('opacity', '0.55');
-            addBtn?.style.setProperty('cursor', 'not-allowed');
-            addLink?.setAttribute('aria-disabled', 'true');
-            addLink?.setAttribute('tabindex', '-1');
-            addLink?.addEventListener('click', (e) => e.preventDefault());
-            document.querySelectorAll('#donorForm input, #donorForm select, #donorForm textarea, #donorForm button, #beneficiaryForm input, #beneficiaryForm select, #beneficiaryForm textarea, #beneficiaryForm button, #assistanceForm input, #assistanceForm select, #assistanceForm textarea, #assistanceForm button, #projectForm input, #projectForm select, #projectForm textarea, #projectForm button, #distributionForm input, #distributionForm select, #distributionForm textarea, #distributionForm button, #expenseForm input, #expenseForm select, #expenseForm textarea, #expenseForm button, #accountForm input, #accountForm select, #accountForm button, #inventoryForm input, #inventoryForm select, #inventoryForm textarea, #inventoryForm button, #addDonorBtn').forEach(control => {
-                control.setAttribute('disabled', 'disabled');
-            });
-        }
-
         const sidebarToggle = document.getElementById('sidebarToggle');
         const sidebarBackdrop = document.getElementById('sidebarBackdrop');
         sidebarToggle?.addEventListener('click', () => toggleSidebar());
@@ -4275,7 +4929,17 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         renderDashboard();
         document.getElementById('donationStatusFilter')?.addEventListener('change', renderDashboard);
-        if (section === 'Transparency') renderPublicPage();
+        if (section === 'Transparency') {
+            renderPublicPage();
+            document.getElementById('transparencyEvidenceForm')?.addEventListener('submit', handleTransparencyEvidenceSubmit);
+            try {
+                await loadAdminTransparencyEvidence();
+            } catch (error) {
+                console.error('Unable to load transparency documents for administration.', error);
+                const tbody = document.getElementById('transparencyEvidenceTableBody');
+                if (tbody) tbody.innerHTML = `<tr><td colspan="4" class="empty-table">Unable to load published documents: ${escapeHtml(error.message)}</td></tr>`;
+            }
+        }
         document.getElementById('logoutBtn')?.addEventListener('click', (e) => { e.preventDefault(); logout(); });
         document.querySelector('.admin-context-logout')?.addEventListener('click', (e) => { e.preventDefault(); logout(); });
         document.getElementById('donorForm')?.addEventListener('submit', handleDonorSubmit);
@@ -4299,6 +4963,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('inventoryForm')?.addEventListener('submit', handleInventorySubmit);
         document.getElementById('distributionForm')?.addEventListener('submit', handleDistributionSubmit);
         document.getElementById('expenseForm')?.addEventListener('submit', handleExpenseSubmit);
+        document.getElementById('expenseProject')?.addEventListener('change', updateExpenseFundingPreview);
+        document.getElementById('expenseAmount')?.addEventListener('input', updateExpenseFundingPreview);
+        document.getElementById('expenseReceiptReplace')?.addEventListener('change', handleExpenseReceiptReplace);
         document.getElementById('importLegacyData')?.addEventListener('click', importLegacyBrowserData);
         if (role !== 'admin') {
             const importButton = document.getElementById('importLegacyData');
@@ -4354,6 +5021,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (publicFeedbackStatus) publicFeedbackStatus.textContent = 'Contact message details are restricted to active administrators.';
             }
         }
+        document.getElementById('assistanceRequestSearch')?.addEventListener('input', renderAssistanceRequests);
+        document.getElementById('assistanceRequestFilter')?.addEventListener('change', renderAssistanceRequests);
+        document.getElementById('publicFeedbackSearch')?.addEventListener('input', renderPublicFeedback);
+        document.getElementById('publicFeedbackFilter')?.addEventListener('change', renderPublicFeedback);
         renderAssistanceRequests();
         renderPublicFeedback();
         renderInventory();
@@ -4411,4 +5082,5 @@ document.addEventListener('DOMContentLoaded', async () => {
     updateTypeFields();
 
     if (page === 'login') initializeLoginPage();
+    void initializeMotionEnhancements(page);
 });

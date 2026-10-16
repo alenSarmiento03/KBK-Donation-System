@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Learn how KBK handles information submitted through its website and donation system.">
+    <title>Privacy Notice — KBK Community Donation System</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body data-page="public" class="public-editorial-page page-privacy">
+    <nav class="navbar">
+        <div class="navbar-container">
+            <a href="index.html" class="navbar-brand">
+                <div class="logo"><img src="photo.png/kbk-community-emblem.png" alt="KBK logo"></div>
+                <span class="brand-name">KBK Community Donation Tracking System</span>
+            </a>
+            <ul class="navbar-menu">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="about.html">About KBK</a></li>
+                <li><a href="contact.html">Contact</a></li>
+            </ul>
+        </div>
+    </nav>
+    <main class="container editorial-container">
+        <article class="public-page-content" aria-labelledby="privacy-heading">
+            <header class="contact-page-heading">
+                <p class="eyebrow">KBK COMMUNITY DONATION TRACKING SYSTEM</p>
+                <h1 class="section-title" id="privacy-heading">Privacy Notice</h1>
+                <p class="transparency-intro">This notice explains what information the website and its administration system handle, why it is used, and how to contact KBK about it.</p>
+                <p><small>Last updated: October 15, 2026</small></p>
+            </header>
+
+            <section aria-labelledby="who-heading">
+                <h2 id="who-heading">Who operates the system</h2>
+                <p>The system is operated by Kapisanan Buklod ng Kabataan (KBK) for its community donation work in Lipa City, Batangas, Philippines. Assistance requests through this website are for authorized representatives of Lipa City Local Government Units (LGUs) only.</p>
+            </section>
+
+            <section aria-labelledby="information-heading">
+                <h2 id="information-heading">Information that may be handled</h2>
+                <ul>
+                    <li><strong>Assistance requests:</strong> LGU office or department, contact details, assistance type, requested quantity if supplied, and the description of the request. The description should include the authorized representative's name and position, and only details needed to review the request.</li>
+                    <li><strong>Contact messages:</strong> name if supplied, required email address or phone number, subject, and message.</li>
+                    <li><strong>Donation and administration records:</strong> information entered by authorized KBK administrators to record and manage donations, donors, beneficiaries, projects, inventory, allocations, distributions, expenses, and related evidence.</li>
+                    <li><strong>Technical and security data:</strong> the public submission security check processes request information needed to distinguish people from automated abuse. The submission service uses a one-way hash of the request's IP address for rate limiting; rate-limit records are scheduled for deletion after two days.</li>
+                </ul>
+                <p>Do not submit passwords, payment-card or bank-account details, or unnecessary sensitive or medical information through public forms.</p>
+            </section>
+
+            <section aria-labelledby="use-heading">
+                <h2 id="use-heading">How information is used</h2>
+                <p>KBK uses submitted information to review and respond to assistance requests and messages, maintain donation and program records, operate the system, prevent abusive submissions, and prepare public summaries. Public summaries are designed to show reviewed aggregate information and not private contact details or private records.</p>
+                <p>Submitting a form does not guarantee assistance or a response within a particular time. The contact form does not send an automatic email receipt or reply.</p>
+            </section>
+
+            <section aria-labelledby="storage-heading">
+                <h2 id="storage-heading">Storage, access, and service providers</h2>
+                <p>Shared records and uploaded evidence are stored using Supabase services. Private inbox records and receipts are restricted to active KBK administrators by the application's access controls. The website also uses browser storage for application settings, session state, or cached records on the device using it.</p>
+                <p>Public forms use Cloudflare Turnstile for an anti-abuse check. If KBK enables inbox email notifications, the notification service sends only a generic notice that a new submission arrived; the message content and submitter contact details are omitted. These providers process technical information as needed to provide their services and under their own terms and privacy notices.</p>
+            </section>
+
+            <section aria-labelledby="retention-heading">
+                <h2 id="retention-heading">How long information is kept</h2>
+                <p>The database setup schedules assistance requests and contact messages for deletion 180 days after submission, and rate-limit records for deletion after two days. This automatic deletion depends on the database retention job being enabled and operating; KBK should verify that job in its Supabase dashboard. Authorized administrators can also delete inbox records. Other operational records are retained as needed to manage the donation system; a separate fixed retention period is not specified here.</p>
+            </section>
+
+            <section aria-labelledby="choices-heading">
+                <h2 id="choices-heading">Your choices and privacy questions</h2>
+                <p>For a question or request about information you submitted, including a request to correct or delete it, contact KBK at <a href="mailto:ryealensarmiento@gmail.com">ryealensarmiento@gmail.com</a>. KBK will review requests in light of its operational needs and applicable requirements.</p>
+            </section>
+
+            <section aria-labelledby="cookies-heading">
+                <h2 id="cookies-heading">Cookies and analytics</h2>
+                <p>The project code reviewed for this notice does not include advertising pixels or analytics tools. The application uses browser storage for its operation, and Supabase authentication and Cloudflare Turnstile are third-party services. Their handling of browser or technical data is governed by their own service settings and notices.</p>
+            </section>
+
+            <p class="request-storage-note">This notice describes the system based on its current project configuration. Deployment settings, service-provider settings, and applicable legal obligations should be reviewed by KBK before the website is published.</p>
+        </article>
+    </main>
+    <footer class="footer">
+        <p>© 2026 KBK Community Donation Tracking System — Transparency. Accountability. Community.</p>
+        <p><a href="index.html">Home</a> · <a href="contact.html">Contact KBK</a></p>
+    </footer>
+    <script src="supabase-config.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

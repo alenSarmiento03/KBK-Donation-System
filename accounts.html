@@ -3,25 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KBK Community Donation Tracking System — Users & Accounts</title>
+    <title>KBK Community Donation Tracking System — Administrator Account</title>
     <link rel="stylesheet" href="style.css">
 </head>
-<body data-page="dashboard" data-section="User Management">
+<body data-page="dashboard" data-section="Administrator Account">
     <button class="sidebar-toggle" id="sidebarToggle" type="button" aria-label="Toggle menu" aria-expanded="false"><span></span><span></span><span></span></button><div class="sidebar-backdrop" id="sidebarBackdrop"></div>
     <div class="admin-layout"><aside class="sidebar">
-        <div class="sidebar-brand"><div class="logo"><img src="photo.png/logo1.png" alt="KBK logo"></div><span class="brand-name">KBK Community Donation Tracking System</span></div>
+        <div class="sidebar-brand"><div class="logo"><img src="photo.png/kbk-community-emblem.png" alt="KBK logo"></div><span class="brand-name">KBK Community Donation Tracking System</span></div>
         <ul class="sidebar-menu">
             <li><a href="dashboard.html"><span>Dashboard</span></a></li><li><a href="donors.html"><span>Donor Management</span></a></li><li><a href="donations.html"><span>Donation Management</span></a></li><li><a href="allocations.html"><span>Donation Allocation</span></a></li><li><a href="beneficiaries.html">            <span>Beneficiaries &amp; Requests</span></a></li><li><a href="projects.html"><span>Projects & Activities</span></a></li><li><a href="distributions.html"><span>Distributions</span></a></li><li><a href="expenses.html"><span>Expenses</span></a></li><li><a href="reports.html"><span>Reports</span></a></li><li><a href="index.html"><span>Public Site</span></a></li><li><a href="#" id="logoutBtn"><span>Logout</span></a></li>
         </ul>
     </aside><main class="main-content">
         <section class="section-block">
-            <div class="page-header compact"><div><h1>User &amp; Account Management</h1><p>Account credentials and permissions are managed by Supabase Authentication.</p></div></div>
-            <div class="account-warning alert alert-success"><strong>Secure account setup:</strong> Create or disable users in Supabase Authentication, then assign each user's <code>admin</code> or <code>staff</code> role in the protected <code>kbk_profiles</code> table. Passwords are never stored by this browser app.</div>
-            <div class="page-header compact project-list-header"><div><h2>Account administration</h2><p>Use the Supabase project dashboard to manage sign-in methods, reset passwords, deactivate accounts, and grant roles.</p></div></div>
+            <div class="page-header compact"><div><h1>Administrator Account</h1><p>Your account credentials are managed by Supabase Authentication.</p></div></div>
+            <div class="account-warning alert alert-success"><strong>Single-administrator setup:</strong> This system supports administrator access only. Create one administrator in Supabase Authentication and add that account to the protected <code>kbk_profiles</code> table with the <code>admin</code> role. Passwords are never stored by this browser app.</div>
+            <div class="page-header compact project-list-header"><div><h2>Administrator account</h2><p>Use the Supabase project dashboard to reset your password or disable your account if needed. Do not create staff profiles.</p></div></div>
             <div class="page-header compact project-list-header"><div><h2>Move saved browser records to the shared database</h2><p>The first administrator sign-in preserves this browser's old records as a local backup. Import only after reviewing them; this replaces the corresponding shared record lists.</p></div></div>
             <button class="btn btn-outline" id="importLegacyData" type="button">Import this browser's saved records</button>
             <p id="legacyImportStatus" class="report-message" role="status" aria-live="polite"></p>
-            <div class="table-wrapper"><table><thead><tr><th>Username</th><th>Role</th><th>Status</th><th>Actions</th></tr></thead><tbody id="accountTableBody"></tbody></table></div>
+            <div class="table-wrapper"><table><thead><tr><th>Account</th></tr></thead><tbody id="accountTableBody"></tbody></table></div>
             <div class="page-header compact project-list-header"><div><h2>User Activity</h2><p>Recent administrative actions recorded in the shared system.</p></div></div>
             <div class="table-wrapper"><table><thead><tr><th>User</th><th>Activity</th><th>Date / Time</th></tr></thead><tbody id="activityLogBody"></tbody></table></div>
         </section>

@@ -11,7 +11,7 @@
     <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
     <div class="admin-layout">
         <aside class="sidebar">
-            <div class="sidebar-brand"><div class="logo"><img src="photo.png/logo1.png" alt="KBK logo"></div><span class="brand-name">KBK Community Donation Tracking System</span></div>
+            <div class="sidebar-brand"><div class="logo"><img src="photo.png/kbk-community-emblem.png" alt="KBK logo"></div><span class="brand-name">KBK Community Donation Tracking System</span></div>
             <ul class="sidebar-menu">
                 <li><a href="dashboard.html"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 19V5m0 14h16M8 16v-4m4 4V8m4 8v-7"/></svg></span><span>Dashboard</span></a></li>
                 <li><a href="donors.html" class="active"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3 19c0-3 2-5 6-5s6 2 6 5m2-8a3 3 0 1 0 0-6m1 9c2 .5 3 2 3 4"/></svg></span><span>Donor Management</span></a></li>
@@ -31,8 +31,8 @@
             <section class="section-block donor-section">
                 <div class="page-header compact"><div><h1>Donor Management</h1><p>Manage donor records, searches, and donation history</p></div><button class="btn btn-accent" id="addDonorBtn" type="button">Add Donor</button></div>
                 <div class="donor-toolbar">
-                    <input type="search" id="donorSearch" class="form-control" placeholder="Search donor by name or organization">
-                    <select id="donorStatusFilter" class="form-control"><option value="all">All donor statuses</option><option value="active">Active</option><option value="inactive">Inactive</option></select>
+                    <input type="search" id="donorSearch" class="form-control" placeholder="Search donor by name or organization" aria-label="Search donors by name or organization">
+                    <select id="donorStatusFilter" class="form-control" aria-label="Filter donors by status"><option value="all">All donor statuses</option><option value="active">Active</option><option value="inactive">Inactive</option></select>
                 </div>
                 <section class="donor-contributions" aria-labelledby="donor-contributions-heading">
                     <div class="page-header compact">
@@ -46,6 +46,7 @@
                 <div class="donor-panel">
                     <form id="donorForm" class="donor-form">
                         <input type="hidden" id="donorId" value="">
+                        <p class="donor-form-status" id="donorFormStatus" aria-live="polite">Add a donor or choose Edit details from the list below.</p>
                         <div class="form-row">
                             <div class="form-group"><label for="donorFullName">Donor Name</label><input type="text" id="donorFullName" class="form-control" required></div>
                             <div class="form-group"><label for="donorType">Donor Type</label><select id="donorType" class="form-control"><option value="Individual">Individual</option><option value="Business">Business</option><option value="Organization">Organization</option></select></div>
@@ -59,9 +60,9 @@
                             <div class="form-group"><label for="donorStatus">Status</label><select id="donorStatus" class="form-control"><option value="active">Active</option><option value="inactive">Inactive</option></select></div>
                             <div class="form-group"><label for="donorLastDonation">Last Donation</label><input type="date" id="donorLastDonation" class="form-control"></div>
                         </div>
-                        <div class="form-actions"><button type="submit" class="btn btn-primary">Save Donor</button><button type="button" class="btn btn-outline" id="resetDonorForm">Cancel</button></div>
+                        <div class="form-actions"><button type="submit" class="btn btn-primary">Save donor</button><button type="button" class="btn btn-outline" id="resetDonorForm">Cancel</button></div>
                     </form>
-                    <aside class="profile-panel"><h2>Donor Profile</h2><div id="donorProfileCard" class="profile-card">Select a donor to review their profile and donation history.</div></aside>
+                    <aside class="profile-panel"><h2>Donor Profile</h2><p class="donor-panel-hint">View profile shows details and donation history here. Edit details loads the donor into the form.</p><div id="donorProfileCard" class="profile-card">Select a donor below to review their profile and donation history.</div></aside>
                 </div>
                 <div class="table-wrapper donor-table-wrapper"><table><thead><tr><th>Donor</th><th>Type</th><th>Contact</th><th>Last Donation</th><th>Status</th><th>Actions</th></tr></thead><tbody id="donorTableBody"></tbody></table></div>
             </section>

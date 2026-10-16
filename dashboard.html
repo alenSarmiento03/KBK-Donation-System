@@ -11,7 +11,7 @@
     <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
     <div class="admin-layout">
         <aside class="sidebar">
-            <div class="sidebar-brand"><div class="logo"><img src="photo.png/logo1.png" alt="KBK logo"></div><span class="brand-name">KBK Community Donation Tracking System</span></div>
+            <div class="sidebar-brand"><div class="logo"><img src="photo.png/kbk-community-emblem.png" alt="KBK logo"></div><span class="brand-name">KBK Community Donation Tracking System</span></div>
             <ul class="sidebar-menu">
                 <li><a href="dashboard.html" class="active"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 19V5m0 14h16M8 16v-4m4 4V8m4 8v-7"/></svg></span><span>Dashboard</span></a></li>
                 <li><a href="donors.html"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3 19c0-3 2-5 6-5s6 2 6 5m2-8a3 3 0 1 0 0-6m1 9c2 .5 3 2 3 4"/></svg></span><span>Donor Management</span></a></li>
@@ -28,13 +28,14 @@
             </ul>
         </aside>
         <main class="main-content">
-            <div class="page-header"><div><h1>Dashboard</h1><p>Organization overview and recent activity</p></div><a class="btn btn-accent" href="donations.html#donation-tracking">Review Donations</a></div>
+            <div class="page-header dashboard-page-header"><div><p class="dashboard-eyebrow">ADMIN · DONATION SYSTEM</p><h1>Donation Dashboard</h1><p>Review donation records, verify contributions, and monitor donor totals.</p></div><a class="btn btn-accent" href="donations.html#donation-tracking">Manage Donation Records</a></div>
             <section class="section-block admin-dashboard-section">
                 <div class="admin-overview-grid" id="adminDashboardOverview">
+                    <a class="mini-stat info" href="donations.html#donation-tracking"><span>Donation Records</span><strong id="totalDonations">0</strong><small>All recorded statuses</small></a>
+                    <a class="mini-stat warning" href="donations.html#donation-tracking"><span>Pending Verification</span><strong id="pendingVerificationCount">0</strong><small>Awaiting admin review</small></a>
                     <a class="mini-stat accent" href="transparency.html"><span>Verified Cash Donations</span><strong id="totalCashReceived">₱0.00</strong><small>Included in official totals</small></a>
                     <a class="mini-stat success" href="donors.html"><span>Total Donors</span><strong id="donorCount">0</strong><small>Unique donor names</small></a>
                     <a class="mini-stat info" href="donations.html#donation-tracking"><span>Verified Item Quantities</span><strong id="totalDonatedItems">0</strong><small>Grouped by item and unit</small></a>
-                    <a class="mini-stat warning" href="donations.html#donation-tracking"><span>Pending Verification</span><strong id="pendingVerificationCount">0</strong><small>Awaiting admin review</small></a>
                 </div>
                 <div class="dashboard-lower-grid">
                     <section class="dashboard-panel recent-donations" aria-labelledby="recent-donations-heading">
@@ -42,19 +43,19 @@
                         <div class="table-wrapper"><table><thead><tr><th>Donation ID</th><th>Donor</th><th>Type</th><th>Amount / Item</th><th>Status</th></tr></thead><tbody id="recentDonationsBody"></tbody></table></div>
                     </section>
                     <section class="dashboard-panel recent-activity" aria-labelledby="recent-activities-heading">
-                        <div class="page-header compact"><div><h2 id="recent-activities-heading">Recent Activities</h2><p>Latest changes recorded in the admin activity log.</p></div><a href="accounts.html#activityLogBody">View activity log</a></div>
+                        <div class="page-header compact"><div><h2 id="recent-activities-heading">Recent Admin Activity</h2><p>Recent changes to donation and supporting records.</p></div><a href="accounts.html#activityLogBody">View activity log</a></div>
                         <ul id="recentActivityList"></ul>
                     </section>
                 </div>
                 <div class="dashboard-shortcuts" aria-labelledby="admin-shortcuts-heading">
-                    <div class="page-header compact"><div><h2 id="admin-shortcuts-heading">Admin Shortcuts</h2><p>Quick access to donation records, allocations, reporting, and community updates.</p></div></div>
+                    <div class="page-header compact"><div><h2 id="admin-shortcuts-heading">Donation Workflows</h2><p>Start with gifts received, then review how donations are allocated and reported.</p></div></div>
                     <div class="dashboard-shortcut-grid">
-                        <a href="donations.html#donation-tracking"><strong>Donation Management</strong><span>Add, review, verify, and search records</span></a>
-                        <a href="donors.html"><strong>Donor Management</strong><span>Profiles and contribution history</span></a>
-                        <a href="allocations.html"><strong>Allocations &amp; Expenses</strong><span>Track designated funds and spending</span></a>
-                        <a href="reports.html"><strong>Reports &amp; Receipts</strong><span>Generate donation and finance reports</span></a>
-                        <a href="projects.html"><strong>Projects &amp; Activities</strong><span>Manage drives and community activities</span></a>
-                        <a href="updates.html"><strong>Announcements</strong><span>View community news and updates</span></a>
+                        <a href="donations.html#donation-tracking"><strong>1. Record &amp; Verify Donations</strong><span>Add cash or in-kind gifts, review proof, and update donation status.</span></a>
+                        <a href="donors.html"><strong>2. Review Donors</strong><span>Manage donor profiles and see their contribution history.</span></a>
+                        <a href="allocations.html"><strong>3. Track Allocations</strong><span>Record where verified donations are assigned.</span></a>
+                        <a href="reports.html"><strong>4. Reports &amp; Receipts</strong><span>Generate donation reports and acknowledgments.</span></a>
+                        <a href="projects.html"><strong>Community Projects</strong><span>Manage activities connected to donation campaigns.</span></a>
+                        <a href="updates.html"><strong>Community Updates</strong><span>View public news and announcements.</span></a>
                     </div>
                 </div>
             </section>

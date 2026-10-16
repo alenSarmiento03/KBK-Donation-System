@@ -7,11 +7,11 @@
     <title>Transparency Dashboard — KBK</title>
     <link rel="stylesheet" href="style.css">
 </head>
-<body data-page="public">
-    <nav class="navbar"><div class="navbar-container"><a href="index.html" class="navbar-brand"><div class="logo"><img src="photo.png/logo1.png" alt="KBK logo"></div><span class="brand-name">KBK Community Donation Tracking System</span></a><ul class="navbar-menu"></ul></div></nav>
-    <main class="container">
-        <h1 class="section-title">Transparency Dashboard</h1>
-        <p class="transparency-intro">Aggregate totals from verified donation and expense records, allocations, and distributions maintained by KBK.</p>
+<body data-page="public" class="public-editorial-page page-progress">
+    <nav class="navbar"><div class="navbar-container"><a href="index.html" class="navbar-brand"><div class="logo"><img src="photo.png/kbk-community-emblem.png" alt="KBK logo"></div><span class="brand-name">KBK Community Donation Tracking System</span></a><ul class="navbar-menu"></ul></div></nav>
+    <header class="public-page-hero progress-hero"><div class="public-page-hero-copy"><p class="eyebrow">OPEN BOOKS · SHARED PROGRESS</p><h1>See what we<br><em>make possible.</em></h1><p>Follow verified contributions, recorded allocations, and the projects moving forward with community support.</p><a class="editorial-primary-link" href="donate.html">Join the impact <span aria-hidden="true">↗</span></a></div><div class="progress-hero-art" aria-hidden="true"><span class="progress-ring"></span><strong>GIVE<br><i>→</i><br>GROW</strong><small>COMMUNITY PROGRESS</small></div></header>
+    <main class="container editorial-container">
+        <div class="editorial-section-heading"><p class="eyebrow">THE NUMBERS, IN THE OPEN</p><h2>Community progress</h2><p>Aggregate totals from verified donation and expense records, allocations, and distributions maintained by KBK.</p></div>
         <div class="stats-grid transparency-stats">
             <article class="stat-card"><div class="stat-label"><span class="public-stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 7h18v12H3zM3 10h18M7 15h3"/><path d="M7 4h14v3"/></svg></span>Verified Cash Donations</div><div class="stat-value" id="publicTotal">₱0.00</div><div class="stat-sub">Approved records only</div></article>
             <article class="stat-card accent"><div class="stat-label"><span class="public-stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m3 7 9-4 9 4-9 4zM3 7v10l9 4 9-4V7M12 11v10"/></svg></span>Items Donated</div><div class="stat-value" id="publicInKind">0</div><div class="stat-sub"><span id="publicInKindRecords">0</span> approved item donations</div></article>
@@ -33,10 +33,17 @@
             <p class="transparency-intro">Progress includes verified cash donations linked to each active campaign.</p>
             <div class="impact-grid" id="publicCampaignProgress" aria-live="polite"></div>
         </section>
+        <section class="public-evidence-section" aria-labelledby="public-evidence-heading">
+            <div class="editorial-section-heading"><p class="eyebrow">SUPPORTING DOCUMENTS</p><h2 id="public-evidence-heading">Published Transparency Files</h2><p>These documents were reviewed for public sharing. Original donation receipts remain private.</p></div>
+            <div class="public-evidence-list" id="publicTransparencyEvidence" aria-live="polite"><p class="transparency-intro">Loading published documents…</p></div>
+        </section>
         <p class="public-privacy-note">Totals include only donations that KBK has checked and approved. Donors are named only when they have given permission; otherwise, they appear as Anonymous Donor. Recipient names and contact details are never shown. This demo stores records in this browser, so figures are not shared across devices.</p>
         <section class="public-impact" aria-labelledby="donor-recognition-heading">
-            <h2 class="section-title" id="donor-recognition-heading">Donor Recognition</h2>
-            <p class="transparency-intro">Donors who have not agreed to be named are shown as Anonymous Donor.</p>
+            <div class="recognition-section-heading">
+                <span class="recognition-heading-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 15.5a5.5 5.5 0 1 0 0-11 5.5 5.5 0 0 0 0 11Z"/><path d="m8.5 14.5-1 6 4.5-2.5 4.5 2.5-1-6M9.5 10.5l1.6 1.6 3.4-3.5"/></svg></span>
+                <div><p class="eyebrow">A THANK YOU TO OUR COMMUNITY</p><h2 class="section-title" id="donor-recognition-heading">Donor Recognition</h2>
+                    <p class="transparency-intro">We recognize verified contributions with care. Names appear only when a donor has agreed to public recognition.</p></div>
+            </div>
             <div class="impact-grid" id="publicDonorRecognition" aria-live="polite"></div>
         </section>
     </main>

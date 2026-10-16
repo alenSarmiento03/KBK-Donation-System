@@ -12,7 +12,7 @@
     <nav class="navbar public-sidebar" aria-label="Public navigation">
         <div class="navbar-container">
             <a href="index.html" class="navbar-brand">
-                <div class="logo"><img src="photo.png/logo1.png" alt="KBK logo"></div>
+                <div class="logo"><img src="photo.png/kbk-community-emblem.png" alt="KBK logo"></div>
                 <span class="brand-name">KBK Community Donation Tracking System</span>
             </a>
             <ul class="navbar-menu" id="publicSiteMenu">
@@ -28,13 +28,18 @@
     <header class="public-home-hero hero-minimal">
         <div class="hero-inner">
             <div class="hero-badge">KBK COMMUNITY</div>
-            <h1>Small acts, lasting impact.</h1>
-            <p>Transparent donations, current campaigns, and community impact.</p>
+            <h1>Every donation, tracked with care.</h1>
+            <p>KBK records and verifies cash and in-kind donations supporting Lipa City Local Government Units (LGUs). Everyone can view approved donation progress; only authorized administrators can manage records.</p>
             <div class="public-home-actions">
-                <a class="public-request-link" href="#assistance-request">Request Assistance</a>
-                <a class="public-impact-link" href="donate.html">How to Donate</a>
-                <a class="public-impact-link" href="transparency.html">Explore Community Progress</a>
+                <a class="public-request-link" href="transparency.html">View donation progress <span aria-hidden="true">↗</span></a>
+                <a class="public-impact-link" href="donate.html">How to donate</a>
             </div>
+        </div>
+        <div class="hero-art" aria-label="Community giving overview">
+            <div class="hero-orbit hero-orbit-one"></div><div class="hero-orbit hero-orbit-two"></div>
+            <div class="hero-art-top"><span class="hero-live-dot"></span> COMMUNITY IN MOTION <span class="hero-art-mark" aria-hidden="true">✳</span></div>
+            <div class="hero-art-copy"><span>Verified together</span><strong>Every act<br>moves us forward.</strong><small>Transparent giving. Real community impact.</small></div>
+            <div class="hero-art-footer"><span>KBK · COMMUNITY DONATION TRACKING</span><a href="#donation-summary-heading" aria-label="See community donation totals">↓</a></div>
         </div>
     </header>
 
@@ -42,14 +47,14 @@
         <p class="public-data-status" id="publicDataStatus" role="status" aria-live="polite">Loading the latest community data…</p>
         <section class="public-summary-section" aria-labelledby="donation-summary-heading">
             <div class="public-section-heading">
-                <div><h2 class="section-title" id="donation-summary-heading">Our Donations at a Glance</h2><p>Approved donations and the people they help</p></div>
+                <div><h2 class="section-title" id="donation-summary-heading">Donation Progress at a Glance</h2><p>Public totals include approved and verified records only.</p></div>
                 <a href="transparency.html">See where donations go</a>
             </div>
             <div class="stats-grid public-summary-grid">
                 <article class="stat-card">
                     <div class="stat-label"><span class="public-stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 7h18v12H3zM3 10h18M7 15h3"/><path d="M7 4h14v3"/></svg></span>Cash Donations</div>
                     <div class="stat-value" id="publicCashTotal">₱0.00</div>
-                    <div class="stat-sub">Verified cash donations only</div>
+                    <div class="stat-sub">Verified cash gifts only; in-kind items are counted separately</div>
                 </article>
                 <article class="stat-card accent">
                     <div class="stat-label"><span class="public-stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m3 7 9-4 9 4-9 4zM3 7v10l9 4 9-4V7M12 11v10"/></svg></span>Items Donated</div>
@@ -59,7 +64,7 @@
                 <article class="stat-card success">
                     <div class="stat-label"><span class="public-stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-4 2-6 6-6s6 2 6 6m2-8a3 3 0 1 0 0-6m1 9c2 .5 3 2 3 4"/></svg></span>Donors</div>
                     <div class="stat-value" id="publicDonors">0</div>
-                    <div class="stat-sub">Unique donors with verified donations</div>
+                    <div class="stat-sub">Donors linked to verified contributions</div>
                 </article>
                 <article class="stat-card info">
                     <div class="stat-label"><span class="public-stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 3h14v18H5zM8 8h8m-8 4h8"/><path d="m8 16 2 2 5-5"/></svg></span>Approved Donations</div>
@@ -120,6 +125,11 @@
                 </div>
             </div>
             <p class="public-privacy-note">Financial summaries include only reviewed, verified expenses. Donor names are shown only with explicit permission, and contact details and recipient identities are never displayed. Cash totals exclude in-kind contributions.</p>
+            <div class="public-evidence-embed" aria-labelledby="home-evidence-heading">
+                <h3 id="home-evidence-heading">Published Supporting Documents</h3>
+                <div class="public-evidence-list" id="publicTransparencyEvidence" aria-live="polite"><p class="transparency-intro">Loading published documents…</p></div>
+                <a class="public-text-link" href="transparency.html">View full transparency page</a>
+            </div>
         </section>
 
         <section class="public-impact" aria-labelledby="impact-heading">
@@ -144,19 +154,19 @@
         </section>
         <section class="public-assistance-request" id="assistance-request" aria-labelledby="assistance-request-heading">
             <h2 class="section-title" id="assistance-request-heading">Request Assistance</h2>
-            <p class="transparency-intro">Submit a request for KBK to review. Approval is not guaranteed; an administrator will assess the information.</p>
-            <p class="request-storage-note">Your request is sent securely to KBK and can be viewed only by active KBK administrators. We use your contact details to review your request and follow up. Please share only information needed to explain your request; do not include passwords, financial account details, or unnecessary medical details. There is no automatic deletion schedule yet. To ask KBK to delete your request, email <a href="mailto:ryealensarmiento@gmail.com">ryealensarmiento@gmail.com</a>.</p>
+            <p class="transparency-intro">This request form is for authorized representatives of Lipa City LGUs only. KBK does not accept individual or family assistance requests. Approval is not guaranteed; an administrator will review the information.</p>
+            <p class="request-storage-note">Before you submit: KBK uses the information in this form to review and follow up on Lipa City LGU requests. Do not include passwords, financial account details, or unnecessary medical details. The database setup schedules requests for deletion after 180 days; activation of that job must be confirmed. Read the <a href="privacy.html">Privacy Notice</a>. For privacy questions, contact <a href="mailto:ryealensarmiento@gmail.com">ryealensarmiento@gmail.com</a>.</p>
             <form id="publicAssistanceForm" class="public-request-form">
                 <div class="form-row">
-                    <div class="form-group"><label for="requestName">Name <span class="field-optional">(optional)</span></label><input class="form-control" id="requestName" name="name" type="text" maxlength="120" autocomplete="name"></div>
-                    <div class="form-group"><label for="requestContact">Email or phone number</label><input class="form-control" id="requestContact" name="contact" type="text" maxlength="160" autocomplete="on" placeholder="name@example.com or phone number" required aria-describedby="requestContactHelp"><small id="requestContactHelp">We need one way to contact you about your request.</small></div>
+                    <div class="form-group"><label for="requestName">LGU office or department</label><input class="form-control" id="requestName" name="name" type="text" maxlength="120" autocomplete="organization" required aria-describedby="requestNameHelp"><small id="requestNameHelp">Include the authorized representative’s name and position in your request details.</small></div>
+                    <div class="form-group"><label for="requestContact">Official email or phone number</label><input class="form-control" id="requestContact" name="contact" type="text" maxlength="160" autocomplete="on" placeholder="office@example.gov.ph or phone number" required aria-describedby="requestContactHelp"><small id="requestContactHelp">Provide a contact method for the LGU office.</small></div>
                 </div>
                 <div class="form-row">
                     <div class="form-group"><label for="requestType">Type of assistance</label><select class="form-control" id="requestType" name="type" required><option value="">Select a type</option><option>Food</option><option>Education</option><option>Medical</option><option>Emergency</option><option>Other</option></select></div>
                     <div class="form-group"><label for="requestQuantity">Quantity needed</label><input class="form-control" id="requestQuantity" name="quantity" type="text" maxlength="120" placeholder="e.g. 2 food packs"></div>
                 </div>
                 <div class="form-group"><label for="requestDescription">What help do you need?</label><textarea class="form-control" id="requestDescription" name="description" rows="4" minlength="10" maxlength="1500" required aria-describedby="requestDescriptionHelp"></textarea><small id="requestDescriptionHelp">Include only details needed to understand your request.</small></div>
-                <label class="request-consent"><input id="requestConsent" type="checkbox" required> I understand that KBK administrators will use my information to review and follow up on this request.</label>
+                <label class="request-consent"><input id="requestLguEligibility" type="checkbox" required> I confirm I am submitting this request on behalf of a Local Government Unit in Lipa City.</label>
                 <button class="btn btn-primary" type="submit">Submit Request</button>
                 <p class="request-form-message" id="requestFormMessage" role="status" aria-live="polite"></p>
             </form>

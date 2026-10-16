@@ -12,7 +12,7 @@
     <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
     <div class="admin-layout">
         <aside class="sidebar">
-            <div class="sidebar-brand"><div class="logo"><img src="photo.png/logo1.png" alt="KBK logo"></div><span class="brand-name">KBK Community Donation Tracking System</span></div>
+            <div class="sidebar-brand"><div class="logo"><img src="photo.png/kbk-community-emblem.png" alt="KBK logo"></div><span class="brand-name">KBK Community Donation Tracking System</span></div>
             <ul class="sidebar-menu"></ul>
         </aside>
         <main class="main-content">
@@ -32,6 +32,19 @@
                     <div class="transparency-progress"><div class="progress-label"><label for="publicUsedProgress">Verified expenses</label><span id="publicUsedPercent">0%</span></div><progress id="publicUsedProgress" max="100" value="0">0%</progress></div>
                 </div>
                 <p class="public-privacy-note">This page previews public aggregate figures. Donor names appear only with explicit recognition consent; contact details and recipient identities are not displayed. Expense totals include verified records only.</p>
+            </section>
+            <section class="section-block public-evidence-admin" aria-labelledby="evidence-admin-heading">
+                <div class="page-header"><div><h2 id="evidence-admin-heading">Public supporting documents</h2><p>Publish reviewed, redacted copies for visitors. Original receipts remain private.</p></div></div>
+                <p class="public-privacy-note">Files added here are publicly accessible to anyone with the link. Remove donor names, account numbers, transaction references, signatures, addresses, and other private information before publishing.</p>
+                <form id="transparencyEvidenceForm" class="admin-form-grid">
+                    <div class="form-group"><label for="transparencyEvidenceTitle">Document title</label><input class="form-control" id="transparencyEvidenceTitle" maxlength="120" required placeholder="Example: October 2026 donation summary"></div>
+                    <div class="form-group"><label for="transparencyEvidenceDate">Document date</label><input class="form-control" id="transparencyEvidenceDate" type="date"></div>
+                    <div class="form-group"><label for="transparencyEvidenceDescription">Description</label><input class="form-control" id="transparencyEvidenceDescription" maxlength="240" placeholder="Briefly describe what this file verifies"></div>
+                    <div class="form-group"><label for="transparencyEvidenceFile">Redacted file (PDF, JPG, PNG, WebP; max 5 MB)</label><input class="form-control" id="transparencyEvidenceFile" type="file" accept="application/pdf,image/jpeg,image/png,image/webp" required></div>
+                    <label class="confirmation-option"><input type="checkbox" id="transparencyEvidenceReviewed" required> I reviewed this copy and removed private donor and transaction information.</label>
+                    <div><button class="btn btn-primary" type="submit">Publish to public transparency page</button></div>
+                </form>
+                <div class="table-wrapper"><table class="data-table"><thead><tr><th>Title</th><th>Document date</th><th>Preview</th><th>Action</th></tr></thead><tbody id="transparencyEvidenceTableBody"><tr><td colspan="4" class="empty-table">Loading published documents…</td></tr></tbody></table></div>
             </section>
         </main>
     </div>

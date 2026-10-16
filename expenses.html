@@ -9,22 +9,25 @@
 <body data-page="dashboard" data-section="Expense Management">
     <button class="sidebar-toggle" id="sidebarToggle" type="button" aria-label="Toggle menu" aria-expanded="false"><span></span><span></span><span></span></button><div class="sidebar-backdrop" id="sidebarBackdrop"></div>
     <div class="admin-layout"><aside class="sidebar">
-        <div class="sidebar-brand"><div class="logo"><img src="photo.png/logo1.png" alt="KBK logo"></div><span class="brand-name">KBK Community Donation Tracking System</span></div>
+        <div class="sidebar-brand"><div class="logo"><img src="photo.png/kbk-community-emblem.png" alt="KBK logo"></div><span class="brand-name">KBK Community Donation Tracking System</span></div>
         <ul class="sidebar-menu">
             <li><a href="dashboard.html"><span>Dashboard</span></a></li><li><a href="donors.html"><span>Donor Management</span></a></li><li><a href="donations.html"><span>Donation Management</span></a></li><li><a href="allocations.html"><span>Donation Allocation</span></a></li><li><a href="beneficiaries.html">            <span>Beneficiaries &amp; Requests</span></a></li><li><a href="projects.html"><span>Projects & Activities</span></a></li><li><a href="distributions.html"><span>Distributions</span></a></li><li><a href="expenses.html" class="active"><span>Expenses</span></a></li><li><a href="reports.html"><span>Reports</span></a></li><li><a href="index.html"><span>Public Site</span></a></li><li><a href="#" id="logoutBtn"><span>Logout</span></a></li>
         </ul>
     </aside><main class="main-content">
         <section class="section-block">
-            <div class="page-header compact"><div><h1>Expense Management</h1><p>Record project costs and verify them after reviewing supporting receipts or references. Only verified expenses appear in public summaries.</p></div><div class="mini-stat expense-total"><span>Total Recorded Expenses</span><strong id="expenseTotal">₱0.00</strong><span class="muted-text">Verified: <strong id="expenseVerifiedTotal">₱0.00</strong></span></div></div>
+            <div class="page-header compact"><div><h1>Expense Management</h1><p>Record project costs and verify them after reviewing supporting receipts or references. Totals and estimated project balances update automatically; only verified expenses appear in public summaries.</p></div><div class="mini-stat expense-total"><span>Total Recorded Expenses</span><strong id="expenseTotal">₱0.00</strong><span class="muted-text">Verified: <strong id="expenseVerifiedTotal">₱0.00</strong></span></div></div>
             <form id="expenseForm" class="admin-form-grid">
-                <div class="form-group"><label for="expenseDescription">Expense Description</label><input id="expenseDescription" class="form-control" type="text" required></div>
+                <div class="form-group"><label for="expenseDescription">Expense Description</label><input id="expenseDescription" class="form-control" type="text" list="expenseDescriptionOptions" placeholder="Choose or enter a description" required><datalist id="expenseDescriptionOptions"><option value="Food pack supplies"><option value="Transportation / fuel"><option value="School supplies"><option value="Hygiene kit supplies"><option value="Medical supplies"><option value="Cash assistance"><option value="Venue rental"><option value="Printing and materials"><option value="Utilities"><option value="Other project expense"></datalist><small class="field-hint">Choose a common description or type your own.</small></div>
                 <div class="form-group"><label for="expenseAmount">Amount (₱)</label><input id="expenseAmount" class="form-control" type="number" min="0.01" step="0.01" required></div>
                 <div class="form-group"><label for="expenseDate">Date</label><input id="expenseDate" class="form-control" type="date" required></div>
                 <div class="form-group"><label for="expenseProject">Project</label><select id="expenseProject" data-project-select data-placeholder="General / unassigned" class="form-control"><option value="">General / unassigned</option></select></div>
                 <div class="form-group"><label for="expenseCategory">Category</label><input id="expenseCategory" class="form-control" type="text" placeholder="e.g. Food, transport, supplies" required></div>
                 <div class="form-group"><label for="expenseReference">Receipt / Reference</label><input id="expenseReference" class="form-control" type="text" placeholder="Receipt number or reference"></div>
+                <div class="form-group"><label for="expenseReceipt">Upload receipt (optional)</label><input id="expenseReceipt" class="form-control" type="file" accept="image/jpeg,image/png,image/webp,application/pdf"><small class="field-hint">PDF, JPEG, PNG, or WebP up to 512 KB. Stored privately; only active administrators can access it.</small></div>
                 <div><button class="btn btn-primary" type="submit">Record Expense</button></div>
             </form>
+            <input id="expenseReceiptReplace" type="file" accept="image/jpeg,image/png,image/webp,application/pdf" hidden>
+            <div id="expenseFundingPreview" class="expense-funding-preview" aria-live="polite">Choose a project to preview its available funds.</div>
             <div class="page-header compact project-list-header"><div><h2>Expense Records</h2><p><span id="expenseRecordCount">0</span> records</p></div></div>
             <div class="table-wrapper"><table><thead><tr><th>Description</th><th>Amount</th><th>Date</th><th>Project</th><th>Category</th><th>Receipt / Reference</th><th>Public Status</th><th>Actions</th></tr></thead><tbody id="expenseTableBody"></tbody></table></div>
         </section>
