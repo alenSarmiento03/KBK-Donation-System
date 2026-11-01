@@ -3,19 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Generate and review internal KBK donation and program reports.">
+    <meta name="robots" content="noindex, nofollow">
     <title>KBK Community Donation Tracking System — Reports</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body data-page="dashboard" data-section="Reports">
     <button class="sidebar-toggle" id="sidebarToggle" type="button" aria-label="Toggle menu" aria-expanded="false"><span></span><span></span><span></span></button><div class="sidebar-backdrop" id="sidebarBackdrop"></div>
     <div class="admin-layout"><aside class="sidebar">
-        <div class="sidebar-brand"><div class="logo"><img src="photo.png/kbk-community-emblem.png" alt="KBK logo"></div><span class="brand-name">KBK Community Donation Tracking System</span></div>
+        <div class="sidebar-brand"><div class="logo"><img width="512" height="512" decoding="async" src="photo.png/kbk-community-emblem-optimized.jpg" alt="KBK logo"></div><span class="brand-name">KBK Community Donation Tracking System</span></div>
         <ul class="sidebar-menu">
             <li><a href="dashboard.html"><span>Dashboard</span></a></li><li><a href="donors.html"><span>Donor Management</span></a></li><li><a href="donations.html"><span>Donation Management</span></a></li><li><a href="allocations.html"><span>Donation Allocation</span></a></li><li><a href="beneficiaries.html">            <span>Beneficiaries &amp; Requests</span></a></li><li><a href="projects.html"><span>Projects & Activities</span></a></li><li><a href="distributions.html"><span>Distributions</span></a></li><li><a href="expenses.html"><span>Expenses</span></a></li><li><a href="reports.html" class="active"><span>Reports</span></a></li><li><a href="index.html"><span>Public Site</span></a></li><li><a href="#" id="logoutBtn"><span>Logout</span></a></li>
         </ul>
     </aside><main class="main-content">
         <section class="section-block">
-            <div class="page-header compact"><div><h1>Reports</h1><p>Download a single report or one combined CSV of core donation-system records. Choose a date range to narrow time-based records.</p></div></div>
+            <div class="page-header compact"><div><h1>Reports</h1><p>Choose a report and date range, then download the CSV.</p></div></div>
             <div class="report-controls">
                 <div class="form-group"><label for="reportType">Report Type</label><select id="reportType" class="form-control">
                     <option value="all">All Records (CSV)</option><option value="donations">Donation Report</option><option value="donors">Donor Report</option><option value="beneficiaries">Beneficiary Report</option><option value="inventory">Inventory Report</option><option value="distributions">Distribution Report</option><option value="expenses">Expense Report</option><option value="projects">Project Report</option><option value="monthly">Monthly Summary</option><option value="annual">Annual Summary</option>
@@ -26,10 +28,10 @@
             </div>
             <div id="reportPreview" class="report-preview" aria-live="polite">
                 <strong id="reportPreviewCount">Preparing report preview…</strong>
-                <span id="reportPreviewDetails">Change the report type or dates to update the preview.</span>
+                <span id="reportPreviewDetails">Choose a report or date to update the preview.</span>
             </div>
-            <p class="report-privacy-note"><strong>Privacy reminder:</strong> Reports can include donor or beneficiary contact details. Public assistance and contact inbox submissions are not included. Share downloaded files only with authorized people and delete copies when no longer needed.</p>
-            <p id="reportMessage" class="report-message" role="status">Choose a report type to preview the records before downloading a CSV file.</p>
+            <p class="report-privacy-note"><strong>Keep reports private:</strong> Files may include donor or recipient contact details. Inbox messages are not included. Share only with authorized people and delete files when no longer needed.</p>
+            <p id="reportMessage" class="report-message" role="status">Choose a report to preview it before download.</p>
         </section>
     </main></div><script src="supabase-config.js"></script>
 <script src="script.js"></script>

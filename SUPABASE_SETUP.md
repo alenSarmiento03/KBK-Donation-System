@@ -27,7 +27,7 @@ This project is a static browser app. Supabase provides shared PostgreSQL storag
    ```
 
    The supplied `supabase/config.toml` disables automatic JWT checking for these endpoints. The public submission function verifies Turnstile itself, and the inbox notifier checks its webhook secret.
-6. In Supabase SQL Editor, run `supabase-setup.sql`. If this project was already set up, run the updated file again. It removes direct anonymous insert access to inbox tables, creates the private rate-limit data, schedules daily deletion of inbox records older than 180 days, and creates the private receipt and public transparency document buckets with their policies. Verify that the `kbk-inbox-retention-180-days` job is active under Supabase Dashboard > Integrations > Cron.
+6. In Supabase SQL Editor, run `supabase-setup.sql`. If this project was already set up, run the updated file again. It removes direct anonymous insert access to inbox tables, creates the private rate-limit data, schedules daily deletion of inbox records older than 180 days, and creates the private receipt and public transparency document buckets with their policies. It also asks PostgREST to refresh its schema cache. If the public transparency page reports `PGRST205` for `kbk_public_transparency_evidence`, run the narrower `supabase-public-evidence-setup.sql` repair script instead of rerunning unrelated setup. Verify that the `kbk-inbox-retention-180-days` job is active under Supabase Dashboard > Integrations > Cron.
 7. In Authentication, create your one administrator account with a strong password. Copy that user's UUID, then run:
 
    ```sql

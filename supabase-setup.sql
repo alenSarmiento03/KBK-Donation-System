@@ -643,3 +643,6 @@ create policy "Active KBK admins can delete public transparency documents"
             where p.user_id = (select auth.uid()) and p.active and p.role = 'admin'
         )
     );
+
+-- Refresh the PostgREST schema cache after creating/updating public API tables.
+NOTIFY pgrst, 'reload schema';

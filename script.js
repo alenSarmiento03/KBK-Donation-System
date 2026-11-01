@@ -40,6 +40,7 @@ const SHARED_DATA_KEYS = [
 let supabaseClient = null;
 let supabaseUser = null;
 let supabaseInitializationError = null;
+let lucideIconsPromise = null;
 const pendingSharedWrites = new Map();
 const remoteRevisions = new Map();
 let publicUniqueDonorCount = null;
@@ -815,7 +816,7 @@ function createDonationAcknowledgement(donation) {
     const generatedDate = new Date().toLocaleString('en-PH', {
         year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'
     });
-    const logoUrl = new URL('photo.png/kbk-community-emblem.png', window.location.href).href;
+    const logoUrl = new URL('photo.png/kbk-community-emblem-optimized.jpg', window.location.href).href;
     const receiptHtml = `<!doctype html>
 <html lang="en">
 <head>
@@ -1432,7 +1433,7 @@ function renderPublicDonorRecognition(donations) {
                 <span class="recognition-avatar" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M4.5 20c.5-4 3-6 7.5-6s7 2 7.5 6"/></svg></span>
                 <span class="recognition-person-copy"><strong class="recognition-name">${escapeHtml(publicDonorDisplayName(donation))}</strong><small>Verified community supporter</small></span>
             </div>
-            <div class="recognition-contribution">
+            <div class="recognition-contribution${donation.type === 'cash' ? ' is-cash' : ''}">
                 <span class="recognition-contribution-icon" aria-hidden="true"><svg viewBox="0 0 24 24">${donation.type === 'cash'
                     ? '<path d="M12 3v18m4-14.5c-.8-1-2-1.5-4-1.5-2.2 0-3.5 1.1-3.5 2.7S10 10 12 10.5s3.5 1.4 3.5 3-1.3 2.8-3.5 2.8c-1.8 0-3.3-.6-4.2-1.7"/>'
                     : '<path d="M3 9h18v12H3zM2 5h20v4H2zM12 5v16m0-16c-3.5 0-5-1-5-2.5S8 .5 9.5 2 12 5 12 5Zm0 0c3.5 0 5-1 5-2.5S16 .5 14.5 2 12 5 12 5Z"/>'}</svg></span>
@@ -1714,8 +1715,8 @@ function renderAssistanceRequests() {
     tbody.innerHTML = requests.map(request => {
         const submitted = request.submittedAt ? new Date(request.submittedAt).toLocaleString('en-PH') : '—';
         const actions = canReview
-            ? `<div class="action-group"><span class="badge badge-pending">${escapeHtml(request.status || 'Pending')}</span>${request.status === 'Pending' ? `<button class="btn btn-primary btn-xs" type="button" data-request-action="Approved" data-request-id="${Number(request.id)}">Approve</button> <button class="btn btn-outline btn-xs" type="button" data-request-action="Declined" data-request-id="${Number(request.id)}">Decline</button>` : ''}<button class="btn btn-outline btn-xs" type="button" data-request-edit="${Number(request.id)}">Edit</button><button class="btn btn-danger btn-xs" type="button" data-request-delete="${Number(request.id)}">Delete</button></div>`
-            : `<span class="badge badge-pending">${escapeHtml(request.status || 'Pending')}</span>`;
+            ? `<div class="request-review-cell"><span class="badge badge-pending">${escapeHtml(request.status || 'Pending')}</span><div class="action-group request-review-buttons">${request.status === 'Pending' ? `<button class="btn btn-primary btn-xs" type="button" data-request-action="Approved" data-request-id="${Number(request.id)}">Approve</button><button class="btn btn-outline btn-xs" type="button" data-request-action="Declined" data-request-id="${Number(request.id)}">Decline</button>` : ''}<button class="btn btn-outline btn-xs" type="button" data-request-edit="${Number(request.id)}">Edit</button><button class="btn btn-danger btn-xs" type="button" data-request-delete="${Number(request.id)}">Delete</button></div>${renderReplyLink(request.contact, `KBK assistance request ${request.id}`)}</div>`
+            : `<div class="request-review-cell"><span class="badge badge-pending">${escapeHtml(request.status || 'Pending')}</span></div>`;
         return `<tr>
             <td>${escapeHtml(submitted)}</td>
             <td>${escapeHtml(request.name || 'Not provided')}</td>
@@ -1723,7 +1724,7 @@ function renderAssistanceRequests() {
             <td>${escapeHtml(request.type)}</td>
             <td>${escapeHtml(request.quantity || '—')}</td>
             <td>${escapeHtml(request.description)}</td>
-            <td>${actions}${renderReplyLink(request.contact, `KBK assistance request ${request.id}`)}</td>
+            <td>${actions}</td>
         </tr>`;
     }).join('') || '<tr><td colspan="7" class="empty-table">No assistance requests have been submitted.</td></tr>';
     tbody.querySelectorAll('[data-request-action]').forEach(button => {
@@ -1987,7 +1988,7 @@ function renderPublicFeedback() {
         <td>${escapeHtml(item.submittedAt ? new Date(item.submittedAt).toLocaleString('en-PH') : '—')}</td>
         <td>${escapeHtml(item.name || 'Not provided')}</td><td>${escapeHtml(item.contact)}</td>
         <td>${escapeHtml(item.subject)}</td><td>${escapeHtml(item.message)}</td>
-        <td><div class="action-group">${renderReplyLink(item.contact, `Re: ${item.subject}`)}<select class="form-control" aria-label="Status for ${escapeHtml(item.subject)}" data-feedback-status="${Number(item.id)}"><option ${item.status === 'New' ? 'selected' : ''}>New</option><option ${item.status === 'Replied' ? 'selected' : ''}>Replied</option><option ${item.status === 'Resolved' ? 'selected' : ''}>Resolved</option></select><button class="btn btn-danger btn-xs" type="button" data-feedback-delete="${Number(item.id)}">Delete</button></div></td>
+        <td><div class="action-group feedback-actions">${renderReplyLink(item.contact, `Re: ${item.subject}`)}<select class="form-control" aria-label="Status for ${escapeHtml(item.subject)}" data-feedback-status="${Number(item.id)}"><option ${item.status === 'New' ? 'selected' : ''}>New</option><option ${item.status === 'Replied' ? 'selected' : ''}>Replied</option><option ${item.status === 'Resolved' ? 'selected' : ''}>Resolved</option></select><button class="btn btn-danger btn-xs" type="button" data-feedback-delete="${Number(item.id)}">Delete</button></div></td>
     </tr>`).join('') || '<tr><td colspan="6" class="empty-table">No contact messages have been received.</td></tr>';
     tbody.querySelectorAll('[data-feedback-status]').forEach(select => select.addEventListener('change', () => {
         void updateRemoteFeedbackMessage(Number(select.dataset.feedbackStatus), { status: select.value });
@@ -2182,78 +2183,77 @@ function handleInventorySubmit(event) {
 function renderSiteNavigation() {
     const publicMenu = document.querySelector('.navbar-menu');
     const currentPage = location.pathname.split('/').pop() || 'index.html';
-    const publicIcons = {
-        home: '<path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',
-        about: '<circle cx="12" cy="12" r="9"/><path d="M12 11v5m0-8h.01"/>',
-        giving: '<path d="M12 21s-8-4.5-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 10c0 6.5-8 11-8 11Z"/>',
-        category: '<path d="M4 5h16v14H4zM8 9h8m-8 4h8m-8 3h5"/>',
-        campaign: '<path d="M4 20V9l8-5 8 5v11M9 20v-6h6v6M3 9l9-6 9 6"/>',
-        track: '<circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5m-10-11v5m-2-2h4"/>',
-        impact: '<path d="M3 19h18M5 16l4-5 3 2 6-8m0 0v5m0-5h-5"/>',
-        projects: '<rect x="3" y="4" width="8" height="7" rx="1"/><rect x="13" y="4" width="8" height="7" rx="1"/><rect x="3" y="13" width="8" height="7" rx="1"/><rect x="13" y="13" width="8" height="7" rx="1"/>',
-        distribution: '<path d="M4 12h15m-6-6 6 6-6 6M4 6v12"/>',
-        news: '<path d="M5 4h14v16H5zM8 8h8m-8 4h8m-8 4h5"/>',
-        assistance: '<circle cx="12" cy="12" r="9"/><path d="M9.6 9a2.5 2.5 0 1 1 4.3 1.7c-.9.8-1.9 1.2-1.9 2.8M12 17h.01"/>',
-        contact: '<path d="M4 5h16v12H9l-5 4zM8 9h8m-8 4h5"/>'
-    };
-    const publicIcon = name => `<span class="public-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24">${publicIcons[name]}</svg></span>`;
+    const publicIcon = name => `<span class="public-nav-icon" aria-hidden="true"><i data-lucide="${name}"></i></span>`;
     const publicGroups = [
-        { label: 'Home', href: 'index.html', icon: 'home' },
-        { label: 'About KBK', href: 'about.html', icon: 'about' },
-        { label: 'Donate', href: 'donate.html', icon: 'giving' },
-        { label: 'Community Progress', href: 'transparency.html', icon: 'impact' },
-        { label: 'News & Updates', href: 'updates.html', icon: 'news' },
-        { label: 'Get Help', href: 'assistance.html', icon: 'assistance' },
-        { label: 'Contact Us', href: 'contact.html', icon: 'contact' }
+        { label: 'Home', href: 'index.html', icon: 'house', description: 'Go to the public home page.' },
+        { label: 'About KBK', href: 'about.html', icon: 'info', description: 'Learn about KBK and its community work.' },
+        { label: 'Donate', href: 'donate.html', icon: 'heart-handshake', description: 'Learn how to support the community.' },
+        { label: 'Community Progress', href: 'transparency.html', icon: 'chart-no-axes-column-increasing', description: 'See donation totals and community impact.' },
+        { label: 'News & Updates', href: 'updates.html', icon: 'newspaper', description: 'Read community news and updates.' },
+        { label: 'Request Assistance', href: 'assistance.html', icon: 'circle-help', description: 'Submit an assistance request on behalf of a Lipa City LGU.' },
+        { label: 'Contact Us', href: 'contact.html', icon: 'message-square', description: 'Send a question or message to KBK.' }
     ];
     if (publicMenu) {
         publicMenu.innerHTML = publicGroups.map(group =>
-            `<li><a href="${group.href}"${group.href === currentPage ? ' class="active" aria-current="page"' : ''}>${publicIcon(group.icon)}<span>${group.label}</span></a></li>`
+            `<li><a href="${group.href}" title="${group.description}"${group.href === currentPage ? ' class="active" aria-current="page"' : ''}>${publicIcon(group.icon)}<span>${group.label}</span></a></li>`
         ).join('');
         renderPublicPageLayout(publicMenu);
     }
+    void renderLucideIcons().catch(error => console.error('Unable to render Lucide navigation icons.', error));
 
     const adminMenu = document.querySelector('.sidebar-menu');
     if (!adminMenu) return;
     const adminGroups = [
-        { label: null, links: [['Dashboard', 'dashboard.html', 'dashboard']] },
-        { label: 'Donations', links: [['Donation Records', 'donations.html', 'donations'], ['Donors', 'donors.html', 'donors']] },
-        { label: 'Community', links: [['Requests', 'requests.html', 'requests'], ['Beneficiaries', 'beneficiaries.html', 'beneficiaries'], ['Projects & Campaigns', 'projects.html', 'projects']] },
-        { label: 'Operations', links: [['Inventory', 'inventory.html', 'inventory'], ['Allocation & Distribution', 'allocations.html', 'allocations'], ['Expenses', 'expenses.html', 'expenses']] },
-        { label: 'Reports & Settings', links: [['Reports', 'reports.html', 'reports'], ['Transparency', 'admin-transparency.html', 'transparency'], ['Activity Log', 'accounts.html#activityLogBody', 'activity'], ['Settings', 'settings.html', 'settings']] }
+        { label: null, links: [['Overview', 'dashboard.html', 'dashboard', 'See a summary of donations and community activity.']] },
+        { label: 'Donations', links: [['Donation Records', 'donations.html', 'donations', 'View and manage recorded donations.'], ['Donors', 'donors.html', 'donors', 'View donor profiles and giving history.']] },
+        { label: 'Community Support', links: [['Assistance & Messages', 'requests.html', 'requests', 'Review assistance requests and messages from the community.'], ['People Helped', 'beneficiaries.html', 'beneficiaries', 'View people and families who received support.'], ['Projects & Campaigns', 'projects.html', 'projects', 'Manage community programs and fundraising campaigns.']] },
+        { label: 'Operations', links: [['Supplies & Needs', 'inventory.html', 'inventory', 'Track available supplies and items the community needs.'], ['Funds & Distributions', 'allocations.html', 'allocations', 'Assign donation funds and record items given out.'], ['Expenses', 'expenses.html', 'expenses', 'Record and review program spending.']] },
+        { label: 'Reports & Settings', links: [['Reports', 'reports.html', 'reports', 'Review donation, assistance, and expense reports.'], ['Public Transparency', 'admin-transparency.html', 'transparency', 'Manage documents shared on the public transparency page.'], ['Activity Log', 'accounts.html#activityLogBody', 'activity', 'Review recent changes made in the system.'], ['System Settings', 'settings.html', 'settings', 'Review and manage system settings.']] }
     ];
     const adminIcons = {
-        dashboard: '<rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="5" rx="1"/><rect x="13" y="10" width="8" height="11" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/>',
-        donations: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 9h10m-10 4h6"/>',
-        donors: '<circle cx="9" cy="8" r="3"/><path d="M3 20c0-4 2-6 6-6s6 2 6 6m2-8a3 3 0 1 0 0-6m1 9c2 .5 3 2 3 4"/>',
-        requests: '<path d="M5 3h14v18H5zM8 8h8m-8 4h8m-8 4h5"/>',
-        beneficiaries: '<circle cx="12" cy="8" r="3"/><path d="M5 20c0-4 2-6 7-6s7 2 7 6"/>',
-        projects: '<path d="M4 6h6v5H4zM14 6h6v5h-6zM4 14h6v5H4zM14 14h6v5h-6z"/>',
-        inventory: '<path d="M4 7h16v14H4zM3 3h18v4H3zm5 8h8"/>',
-        allocations: '<path d="M4 6h6v5H4zM14 13h6v5h-6zM10 8h4v7m0 0h-4"/>',
-        expenses: '<path d="M5 4h14v16H5zM8 8h8m-8 4h8m-8 4h4"/>',
-        reports: '<path d="M5 19V5m0 14h15M9 15v-4m4 4V8m4 8v-6"/>',
-        transparency: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18m-9-9a14 14 0 0 1 0 18m0-18a14 14 0 0 0 0 18"/>',
-        activity: '<path d="M3 12h4l3-8 4 16 3-8h4"/>',
-        settings: '<circle cx="12" cy="12" r="3"/><path d="m19 13 2 1-2 4-2-1-2 1v2H9v-2l-2-1-2 1-2-4 2-1v-2l-2-1 2-4 2 1 2-1V4h6v2l2 1 2-1 2 4-2 1z"/>',
-        logout: '<path d="M14 5h5v14h-5M10 12h9m-9 0 3-3m-3 3 3 3M5 5h5"/>'
+        dashboard: 'layout-dashboard',
+        donations: 'hand-coins',
+        donors: 'users-round',
+        requests: 'clipboard-list',
+        beneficiaries: 'hand-heart',
+        projects: 'panels-top-left',
+        inventory: 'package',
+        allocations: 'workflow',
+        expenses: 'wallet',
+        reports: 'chart-no-axes-column-increasing',
+        transparency: 'globe',
+        activity: 'activity',
+        settings: 'settings',
+        logout: 'log-out'
     };
-    const iconMarkup = key => `<svg viewBox="0 0 24 24" aria-hidden="true">${adminIcons[key]}</svg>`;
+    const iconMarkup = key => `<i data-lucide="${adminIcons[key]}" aria-hidden="true"></i>`;
     const adminCurrentPage = location.pathname.split('/').pop() || 'dashboard.html';
     adminMenu.innerHTML = adminGroups.map(group =>
         (group.label ? `<li class="sidebar-group"><span class="sidebar-group-label">${group.label}</span></li>` : '') +
-        group.links.map(([label, href, icon]) => {
+        group.links.map(([label, href, icon, description]) => {
             const [target, fragment] = href.split('#');
             const [targetPage, query] = target.split('?');
             const queryMatches = new URLSearchParams(query || '').toString() === new URLSearchParams(location.search).toString();
             const active = targetPage === adminCurrentPage &&
                 queryMatches &&
                 (fragment ? location.hash === `#${fragment}` : !location.hash);
-            return `<li><a href="${href}"${active ? ' class="active" aria-current="page"' : ''}><span class="admin-nav-icon">${iconMarkup(icon)}</span><span>${label}</span></a></li>`;
+            return `<li><a href="${href}" title="${description}"${active ? ' class="active" aria-current="page"' : ''}><span class="admin-nav-icon">${iconMarkup(icon)}</span><span>${label}</span></a></li>`;
         }).join('')
     ).join('') +
         `<li class="sidebar-account" aria-label="Signed-in account"><span class="sidebar-account-label">Signed in as</span><strong>${escapeHtml(sessionStorage.getItem(USER_KEY) || 'Administrator')}</strong></li>` +
-        `<li class="sidebar-utility"><a href="index.html"><span class="admin-nav-icon">${iconMarkup('transparency')}</span><span>View Public Website</span></a></li><li class="sidebar-logout"><a href="login.html?loggedOut=1" id="logoutBtn"><span class="admin-nav-icon">${iconMarkup('logout')}</span><span>Logout</span></a></li>`;
+        `<li class="sidebar-utility"><a href="index.html" title="Open the public-facing KBK website."><span class="admin-nav-icon">${iconMarkup('transparency')}</span><span>View Public Website</span></a></li><li class="sidebar-logout"><a href="login.html?loggedOut=1" id="logoutBtn" title="Sign out of your administrator account."><span class="admin-nav-icon">${iconMarkup('logout')}</span><span>Logout</span></a></li>`;
+    void renderLucideIcons().catch(error => console.error('Unable to render Lucide navigation icons.', error));
+}
+
+async function renderLucideIcons() {
+    if (!window.lucide?.createIcons) {
+        if (!lucideIconsPromise) {
+            lucideIconsPromise = loadScript('https://cdn.jsdelivr.net/npm/lucide@0.468.0/dist/umd/lucide.min.js');
+        }
+        await lucideIconsPromise;
+    }
+    if (!window.lucide?.createIcons) throw new Error('Lucide icons did not load.');
+    window.lucide.createIcons({ attrs: { 'stroke-width': 1.8 } });
 }
 
 function insertAdminPageChrome(section) {
@@ -2268,10 +2268,10 @@ function insertAdminPageChrome(section) {
         </nav>
         <div class="admin-context-actions">
             <a class="admin-notification-link" href="donations.html#donation-tracking" aria-label="Pending donation verification">
-                <span class="admin-notification-icon" aria-hidden="true">!</span><span>Notifications</span><strong id="adminPendingBadge">0</strong>
+                <span class="admin-notification-icon" aria-hidden="true"><i data-lucide="bell"></i></span><span>Notifications</span><strong id="adminPendingBadge">0</strong>
             </a>
-            <a class="admin-profile-link" href="accounts.html"><span class="admin-profile-avatar" aria-hidden="true">${escapeHtml(currentUser.slice(0, 1).toUpperCase())}</span><span>${escapeHtml(currentUser)}</span></a>
-            <a class="admin-context-logout" href="login.html?loggedOut=1">Logout</a>
+            <a class="admin-profile-link" href="accounts.html"><span class="admin-profile-avatar" aria-hidden="true"><i data-lucide="user-round"></i></span><span>${escapeHtml(currentUser)}</span></a>
+            <a class="admin-context-logout" href="login.html?loggedOut=1"><i data-lucide="log-out" aria-hidden="true"></i><span>Logout</span></a>
         </div>`;
     main.prepend(contextBar);
 }
@@ -2282,114 +2282,113 @@ function insertAdminPageGuide() {
 
     const guides = {
         'dashboard.html': {
-            summary: 'Use the overview to spot records that need attention and jump to the right workflow.',
+            summary: 'See what needs attention and open the right page.',
             tips: [
-                'Review donations awaiting verification before using funds in allocations.',
-                'Use the recent activity list to check what changed and who recorded it.'
+                'Verify donations before allocating funds.',
+                'Check recent activity to see what changed.'
             ]
         },
         'donations.html': {
-            summary: 'Record and verify donations, create a branded acknowledgment, and keep any uploaded proof private.',
+            summary: 'Add donations, update their status, and create receipts.',
             tips: [
-                'Search for an existing donor before creating a new profile to avoid duplicates.',
-                'Use Create KBK receipt for a print-ready acknowledgment; download uploaded proof separately.',
-                'Verify a donation only after checking its details and any supporting receipt.',
-                'Use the status filter to review pending, verified, allocated, distributed, completed, or rejected records.'
+                'Search for a donor before adding a new profile.',
+                'Check donation details and proof before verifying.',
+                'Use the status filter to find records.'
             ]
         },
         'donors.html': {
-            summary: 'Maintain donor contact profiles and review contributions associated with each donor.',
+            summary: 'Manage donor profiles and giving history.',
             tips: [
-                'Search before adding a profile so contributions remain attached to one donor record.',
-                'Keep contact information current and use the donor profile to check contribution history.'
+                'Search before adding a donor.',
+                'Keep contact details up to date.'
             ]
         },
         'requests.html': {
-            summary: 'Review public assistance requests and messages submitted through the contact form.',
+            summary: 'Review assistance requests and contact messages.',
             tips: [
-                'Assistance request details come from the shared Supabase inbox; only active admins can manage them.',
-                'Approve or decline requests after review, and delete sensitive request details when no longer needed.',
-                'Contact messages are delivered to the shared inbox; mark them reviewed after follow-up and delete them when no longer needed.',
-                'Messages submitted before this inbox was enabled may still exist only in the browser where they were prepared.'
+                'Only active admins can view assistance requests.',
+                'Review requests before approving or declining.',
+                'Mark messages reviewed after you follow up. Delete sensitive records when no longer needed.',
+                'Older messages may be saved only in the browser where they were submitted.'
             ]
         },
         'beneficiaries.html': {
-            summary: 'Maintain recipient records and a history of assistance provided by KBK.',
+            summary: 'Manage recipient details and assistance history.',
             tips: [
-                'Search for an existing person before adding a record to reduce duplicates.',
-                'Treat names, contact details, and assistance history as confidential; enter only information needed for service delivery.'
+                'Search before adding a recipient.',
+                'Keep personal details private. Record only what is needed.'
             ]
         },
         'projects.html': {
-            summary: 'Create and maintain projects that connect donations, budgets, beneficiaries, and distributions.',
+            summary: 'Manage projects, budgets, and related records.',
             tips: [
-                'Use clear project names and descriptions so you and donors can understand the purpose.',
-                'Keep project status and budget accurate; active projects can appear on the public campaign page.',
-                'Link relevant donation and distribution records to the correct project.'
+                'Use a clear name and purpose.',
+                'Keep the status and budget current.',
+                'Link donations and distributions to the right project.'
             ]
         },
         'inventory.html': {
-            summary: 'Track item stock and manage which current needs are displayed publicly.',
+            summary: 'Track stock and update public needs.',
             tips: [
-                'Update stock after receiving or distributing items so need levels stay accurate.',
-                'Show a public need only when its item and target quantity have been confirmed.',
-                'Mark urgent needs only when they genuinely require priority.'
+                'Update stock when items arrive or are given out.',
+                'Confirm the item and quantity before posting a need.',
+                'Mark a need urgent only when necessary.'
             ]
         },
         'allocations.html': {
-            summary: 'Assign verified cash donations to a project or purpose and review recorded allocations.',
+            summary: 'Assign verified cash to a purpose.',
             tips: [
-                'Confirm the donation is verified before allocating its funds.',
-                'Check the remaining unallocated amount to avoid allocating more than was received.',
-                'Record a specific purpose and date so the allocation can be traced later.'
+                'Verify a donation before allocating it.',
+                'Do not exceed the remaining balance.',
+                'Enter a clear purpose for each allocation.'
             ]
         },
         'distributions.html': {
-            summary: 'Record items or support delivered to beneficiaries and confirm distribution outcomes.',
+            summary: 'Record support delivered to recipients.',
             tips: [
-                'Record the project, beneficiary, item or amount, quantity, and delivery date.',
-                'Mark a distribution complete only after delivery; record confirmation when available.',
-                'Public summaries omit recipient names, but keep administrator records confidential.'
+                'Enter the project, recipient, items, and delivery date.',
+                'Mark complete after delivery. Record confirmation when available.',
+                'Keep recipient details private.'
             ]
         },
         'expenses.html': {
-            summary: 'Record project expenses and verify them after checking receipts or references.',
+            summary: 'Record project costs and review their proof.',
             tips: [
-                'Link each expense to the correct project and keep a useful description and reference.',
-                'Verify an expense only after reviewing its supporting evidence.',
-                'Only verified expenses are included in public transparency summaries.'
+                'Choose the right project and add a clear description.',
+                'Check receipts before verifying an expense.',
+                'Only verified expenses appear in public summaries.'
             ]
         },
         'reports.html': {
-            summary: 'Preview the number of matching records, then download one report or all record types as a spreadsheet-friendly CSV file.',
+            summary: 'Choose a report and date range, then export a CSV.',
             tips: [
-                'Date ranges filter records with dates; undated project and beneficiary profiles remain included.',
-                'All Records combines donation, donor, beneficiary, distribution, expense, and project records in one CSV; private public-inbox submissions are excluded.',
-                'Exports can include personal contact details. Share them only with authorized people and store them securely.'
+                'Date filters do not affect records without dates.',
+                'All Records combines donations, donors, recipients, deliveries, expenses, and projects. Private messages are excluded.',
+                'Keep exported contact details secure. Share them only with authorized people.'
             ]
         },
         'admin-transparency.html': {
-            summary: 'Preview aggregate donation, allocation, and expense figures shown on the public transparency page.',
+            summary: 'Review the totals shown on the public page.',
             tips: [
-                'Check that linked donations, allocations, and verified expenses are recorded consistently.',
-                'Use the public view link to see the same summaries visitors can access.',
-                'Public summaries exclude private recipient and donor contact information.'
+                'Check donations, allocations, and verified expenses.',
+                'Open Public View to see what visitors see.',
+                'Private contact details are not shown.'
             ]
         },
         'accounts.html': {
-            summary: 'Review account guidance, import reviewed legacy data, and inspect the activity log.',
+            summary: 'Manage account access and review system activity.',
             tips: [
-                'Create accounts and assign roles through Supabase Authentication and protected profiles, not this page.',
-                'Review the local backup before importing; an import replaces matching shared record lists.',
-                'Check the activity log when auditing recent administrative changes.'
+                'Manage accounts and roles in Supabase, not on this page.',
+                'Review the backup before importing. Importing replaces matching shared records.',
+                'Check the activity log to review recent changes.'
             ]
         },
         'settings.html': {
-            summary: 'Check the signed-in account, access role, locally cached shared records, and configuration links.',
+            summary: 'Check your account, access, and system links.',
             tips: [
-                'Record counts describe data currently available in this browser and are not a backup status.',
-                'Manage user credentials and roles through the linked account administration workflow.',
-                'Use the public transparency link to review the visitor-facing data.'
+                'Record counts show data available in this browser, not backup status.',
+                'Manage passwords and roles through account administration.',
+                'Open Public Transparency to review visitor-facing data.'
             ]
         }
     };
@@ -2616,7 +2615,11 @@ function renderLegacyReceiptMigrationButton() {
 }
 
 async function migrateLegacyDonationReceipts() {
-    if (getUserRole() !== 'admin' || !supabaseClient) return;
+    if (getUserRole() !== 'admin') return;
+    if (!supabaseClient) {
+        window.alert('Private receipt storage is unavailable. Check the Supabase configuration and try again.');
+        return;
+    }
     const donations = getDonations();
     const legacyDonations = donations.filter(donation => donation.proof?.dataUrl && !donation.proof.path);
     if (!legacyDonations.length) return;
@@ -2763,13 +2766,13 @@ function renderAdminTable(list) {
     tbody.innerHTML = sorted.map(d => {
         const status = normalizeDonationStatus(d.status);
         const proof = !d.proof
-            ? (isStaff ? '—' : `<button type="button" class="btn btn-outline btn-xs" data-donation-acknowledgement="${Number(d.id)}">Create KBK receipt</button>`)
+            ? (isStaff ? '—' : `<div class="action-group donation-proof-actions"><button type="button" class="btn btn-outline btn-xs" data-donation-acknowledgement="${Number(d.id)}">Create KBK receipt</button></div>`)
             : isStaff
                 ? '<span class="muted-text">Admin only</span>'
                 : d.proof.path
-                    ? `<div class="action-group"><button type="button" class="btn btn-outline btn-xs" data-donation-acknowledgement="${Number(d.id)}">Create KBK receipt</button><button type="button" class="btn btn-outline btn-xs" data-donation-receipt="${escapeHtml(d.proof.path)}">Download uploaded proof</button></div>`
+                    ? `<div class="action-group donation-proof-actions"><button type="button" class="btn btn-outline btn-xs" data-donation-acknowledgement="${Number(d.id)}">Create KBK receipt</button><button type="button" class="btn btn-outline btn-xs" data-donation-receipt="${escapeHtml(d.proof.path)}">Download uploaded proof</button></div>`
                     : d.proof.dataUrl
-                        ? `<div class="action-group"><button type="button" class="btn btn-outline btn-xs" data-donation-acknowledgement="${Number(d.id)}">Create KBK receipt</button><a class="btn btn-outline btn-xs" href="${escapeHtml(d.proof.dataUrl)}" download="${escapeHtml(d.proof.name || 'uploaded-proof')}" target="_blank" rel="noopener">Download uploaded proof</a></div>`
+                        ? `<div class="action-group donation-proof-actions"><button type="button" class="btn btn-outline btn-xs" data-donation-acknowledgement="${Number(d.id)}">Create KBK receipt</button><a class="btn btn-outline btn-xs" href="${escapeHtml(d.proof.dataUrl)}" download="${escapeHtml(d.proof.name || 'uploaded-proof')}" target="_blank" rel="noopener">Download uploaded proof</a></div>`
                         : '—';
         const statusControl = isStaff
             ? `<span class="badge badge-${status === 'received' ? 'pending' : status === 'rejected' ? 'rejected' : 'success'}">${status === 'received' ? 'Pending' : capitalize(status)}</span>${status === 'rejected' && d.rejectionReason ? `<small class="rejection-reason">${escapeHtml(d.rejectionReason)}</small>` : ''}`
@@ -2777,7 +2780,7 @@ function renderAdminTable(list) {
         const canAllocate = !['received', 'rejected'].includes(status);
         const actions = isStaff
             ? '<span class="badge badge-pending">View Only</span>'
-            : `<div class="action-group"><button class="btn btn-outline btn-sm" data-donation-action="allocate" data-donation-id="${d.id}" ${d.type !== 'cash' ? 'disabled title="Cash donations only"' : !canAllocate ? 'disabled title="Verify the donation before allocating funds"' : ''}>Allocate</button><button class="btn btn-outline btn-sm" data-donation-action="edit" data-donation-id="${d.id}">Edit</button><button class="btn btn-danger btn-sm" data-donation-action="delete" data-donation-id="${d.id}">Delete</button></div>`;
+            : `<div class="action-group donation-record-actions"><button class="btn btn-outline btn-sm" data-donation-action="allocate" data-donation-id="${d.id}" ${d.type !== 'cash' ? 'disabled title="Cash donations only"' : !canAllocate ? 'disabled title="Verify the donation before allocating funds"' : ''}>Allocate</button><button class="btn btn-outline btn-sm" data-donation-action="edit" data-donation-id="${d.id}">Edit</button><button class="btn btn-danger btn-sm" data-donation-action="delete" data-donation-id="${d.id}">Delete</button></div>`;
         return `
         <tr>
             <td><strong>${donationReference(d.id)}</strong></td>
@@ -2861,7 +2864,7 @@ function renderAllocationTable(donations) {
             <td>${peso(allocated)}</td>
             <td>${peso(remaining)}</td>
             <td>${breakdown}</td>
-            <td>${isStaff ? '<span class="badge badge-pending">View Only</span>' : `<button type="button" class="btn btn-outline btn-sm" data-allocation-id="${donation.id}" ${remaining <= 0 || ['received', 'rejected'].includes(normalizeDonationStatus(donation.status)) ? 'disabled title="Verify the donation before allocating funds"' : ''}>Add Allocation</button>`}</td>
+            <td>${isStaff ? '<span class="badge badge-pending">View Only</span>' : `<div class="action-group allocation-actions"><button type="button" class="btn btn-outline btn-sm" data-allocation-id="${donation.id}" ${remaining <= 0 || ['received', 'rejected'].includes(normalizeDonationStatus(donation.status)) ? 'disabled title="Verify the donation before allocating funds"' : ''}>Add Allocation</button></div>`}</td>
         </tr>`;
     }).join('') || '<tr><td colspan="7" class="empty-table">No cash donations available for allocation.</td></tr>';
     tbody.querySelectorAll('[data-allocation-id]').forEach(button => {
@@ -4909,13 +4912,37 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (!requireAuth()) return;
         const role = getUserRole();
         const section = document.body.dataset.section || 'Dashboard';
+        const pageHeadingIcons = {
+            Dashboard: 'layout-dashboard',
+            'Donation Request Management': 'clipboard-list',
+            'Beneficiary Management': 'hand-heart',
+            'Donor Management': 'users-round',
+            'Allocation & Distribution': 'workflow',
+            'Project/Activity Management': 'panels-top-left',
+            'Expense Management': 'wallet',
+            'Inventory Management': 'package',
+            Reports: 'chart-no-axes-column-increasing',
+            'Administrator Account': 'user-round-cog',
+            Settings: 'settings',
+            Transparency: 'globe'
+        };
         insertAdminPageChrome(section);
         insertAdminPageGuide();
         if (role === 'admin') migrateDonationDonorLinks();
         const welcome = document.querySelector('.page-header h1');
         if (welcome) {
             welcome.textContent = section;
+            const iconName = pageHeadingIcons[section];
+            if (iconName) {
+                welcome.classList.add('admin-page-title');
+                const icon = document.createElement('span');
+                icon.className = 'admin-page-title-icon';
+                icon.setAttribute('aria-hidden', 'true');
+                icon.innerHTML = `<i data-lucide="${iconName}"></i>`;
+                welcome.prepend(icon);
+            }
         }
+        void renderLucideIcons().catch(error => console.error('Unable to render Lucide admin page icons.', error));
 
         const sidebarToggle = document.getElementById('sidebarToggle');
         const sidebarBackdrop = document.getElementById('sidebarBackdrop');

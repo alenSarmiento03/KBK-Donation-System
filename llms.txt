@@ -1,0 +1,25 @@
+# KBK Community Donation Tracking System
+
+> Kapisanan Buklod ng Kabataan (KBK) is a youth-led community organization supporting community giving in Lipa City, Batangas, Philippines. This website shares public donation progress, community needs, activities, and information about how to contact or support KBK.
+
+## Public pages
+
+- [Home](./)
+- [About KBK](./about.html)
+- [Donation categories and current needs](./categories.html)
+- [Community progress and transparency](./transparency.html)
+- [Donation impact](./impact.html)
+- [Projects and activities](./public-projects.html)
+- [Distribution summaries](./public-distributions.html)
+- [News and announcements](./updates.html)
+- [How to donate](./donate.html)
+- [Request assistance](./assistance.html)
+- [Contact KBK](./contact.html)
+- [Privacy notice](./privacy.html)
+
+## Content guidance
+
+- Public totals and records may change as KBK reviews and updates its data.
+- Assistance requests are intended for authorized representatives of Lipa City Local Government Units only. Submission does not guarantee approval.
+- Do not infer or disclose private donor, recipient, contact, or administrative information.
+- For current information, refer to the public pages above.

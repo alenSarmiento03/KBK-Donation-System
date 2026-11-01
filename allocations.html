@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Manage KBK donation allocations and community distributions.">
+    <meta name="robots" content="noindex, nofollow">
     <title>KBK Community Donation Tracking System — Allocations</title>
     <link rel="stylesheet" href="style.css">
 </head>
@@ -11,7 +13,7 @@
     <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
     <div class="admin-layout">
         <aside class="sidebar">
-            <div class="sidebar-brand"><div class="logo"><img src="photo.png/kbk-community-emblem.png" alt="KBK logo"></div><span class="brand-name">KBK Community Donation Tracking System</span></div>
+            <div class="sidebar-brand"><div class="logo"><img width="512" height="512" decoding="async" src="photo.png/kbk-community-emblem-optimized.jpg" alt="KBK logo"></div><span class="brand-name">KBK Community Donation Tracking System</span></div>
             <ul class="sidebar-menu">
                 <li><a href="dashboard.html"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 19V5m0 14h16M8 16v-4m4 4V8m4 8v-7"/></svg></span><span>Dashboard</span></a></li>
                 <li><a href="donors.html"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3 19c0-3 2-5 6-5s6 2 6 5m2-8a3 3 0 1 0 0-6m1 9c2 .5 3 2 3 4"/></svg></span><span>Donor Management</span></a></li>
@@ -29,8 +31,8 @@
         </aside>
         <main class="main-content">
             <section class="section-block allocation-section">
-                <div class="page-header compact"><div><h1>Allocation &amp; Distribution</h1><p>Transparent tracking of where received cash donations are designated and used.</p></div><a class="btn btn-accent" href="distributions.html">Manage Distributions</a></div>
-                <p class="allocation-guidance">Record each allocation against a donation. The total allocated cannot exceed the amount received.</p>
+                <div class="page-header compact"><div><h1>Allocation &amp; Distribution</h1><p>Assign verified donations to a clear purpose.</p></div><a class="btn btn-accent" href="distributions.html">Manage Distributions</a></div>
+                <p class="allocation-guidance">Do not allocate more than the remaining balance.</p>
                 <div class="table-wrapper allocation-table-wrapper"><table><thead><tr><th>Donation ID</th><th>Donor</th><th>Received</th><th>Allocated</th><th>Remaining</th><th>Allocation Breakdown</th><th>Actions</th></tr></thead><tbody id="allocationTableBody"></tbody></table></div>
             </section>
         </main>

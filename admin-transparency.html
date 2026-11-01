@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Review KBK's public-facing aggregate transparency figures.">
+    <meta name="robots" content="noindex, nofollow">
     <title>Transparency — KBK Community Donation Tracking System</title>
     <link rel="stylesheet" href="style.css">
 </head>
@@ -12,7 +13,7 @@
     <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
     <div class="admin-layout">
         <aside class="sidebar">
-            <div class="sidebar-brand"><div class="logo"><img src="photo.png/kbk-community-emblem.png" alt="KBK logo"></div><span class="brand-name">KBK Community Donation Tracking System</span></div>
+            <div class="sidebar-brand"><div class="logo"><img width="512" height="512" decoding="async" src="photo.png/kbk-community-emblem-optimized.jpg" alt="KBK logo"></div><span class="brand-name">KBK Community Donation Tracking System</span></div>
             <ul class="sidebar-menu"></ul>
         </aside>
         <main class="main-content">
@@ -27,15 +28,15 @@
                 </div>
                 <div class="transparency-chart" aria-labelledby="funds-chart-heading">
                     <h2 id="funds-chart-heading">Allocation and use of verified cash donations</h2>
-                    <p class="chart-caption">Bars compare recorded amounts with total verified cash donations.</p>
+                    <p class="chart-caption">Compare allocations and expenses with verified cash donations.</p>
                     <div class="transparency-progress"><div class="progress-label"><label for="publicAllocatedProgress">Allocated</label><span id="publicAllocatedPercent">0%</span></div><progress id="publicAllocatedProgress" max="100" value="0">0%</progress></div>
                     <div class="transparency-progress"><div class="progress-label"><label for="publicUsedProgress">Verified expenses</label><span id="publicUsedPercent">0%</span></div><progress id="publicUsedProgress" max="100" value="0">0%</progress></div>
                 </div>
-                <p class="public-privacy-note">This page previews public aggregate figures. Donor names appear only with explicit recognition consent; contact details and recipient identities are not displayed. Expense totals include verified records only.</p>
+                <p class="public-privacy-note">Donor names appear only with permission. Contact details and recipient names stay private. Only verified expenses are counted.</p>
             </section>
             <section class="section-block public-evidence-admin" aria-labelledby="evidence-admin-heading">
-                <div class="page-header"><div><h2 id="evidence-admin-heading">Public supporting documents</h2><p>Publish reviewed, redacted copies for visitors. Original receipts remain private.</p></div></div>
-                <p class="public-privacy-note">Files added here are publicly accessible to anyone with the link. Remove donor names, account numbers, transaction references, signatures, addresses, and other private information before publishing.</p>
+                <div class="page-header"><div><h2 id="evidence-admin-heading">Public supporting documents</h2><p>Share reviewed copies. Keep original receipts private.</p></div></div>
+                <p class="public-privacy-note">Anyone with the link can view these files. Remove names, account details, signatures, addresses, and other private information before uploading.</p>
                 <form id="transparencyEvidenceForm" class="admin-form-grid">
                     <div class="form-group"><label for="transparencyEvidenceTitle">Document title</label><input class="form-control" id="transparencyEvidenceTitle" maxlength="120" required placeholder="Example: October 2026 donation summary"></div>
                     <div class="form-group"><label for="transparencyEvidenceDate">Document date</label><input class="form-control" id="transparencyEvidenceDate" type="date"></div>

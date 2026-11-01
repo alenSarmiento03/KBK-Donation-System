@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Manage settings for the KBK Community Donation Tracking System.">
+    <meta name="robots" content="noindex, nofollow">
     <title>Settings — KBK Community Donation Tracking System</title>
     <link rel="stylesheet" href="style.css">
 </head>
@@ -11,30 +13,30 @@
     <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
     <div class="admin-layout">
         <aside class="sidebar">
-            <div class="sidebar-brand"><div class="logo"><img src="photo.png/kbk-community-emblem.png" alt="KBK logo"></div><span class="brand-name">KBK Community Donation Tracking System</span></div>
+            <div class="sidebar-brand"><div class="logo"><img width="512" height="512" decoding="async" src="photo.png/kbk-community-emblem-optimized.jpg" alt="KBK logo"></div><span class="brand-name">KBK Community Donation Tracking System</span></div>
             <ul class="sidebar-menu"></ul>
         </aside>
         <main class="main-content">
-            <div class="page-header"><div><h1>System Settings</h1><p>Review your session, data scope, and system configuration.</p></div></div>
+            <div class="page-header"><div><h1>System Settings</h1><p>Check your account, data, and system links.</p></div></div>
             <section class="section-block">
-                <div class="page-header compact"><div><h2>Current Session</h2><p>Signed-in account for this browser session.</p></div></div>
+                <div class="page-header compact"><div><h2>Current Session</h2><p>Account signed in on this browser.</p></div></div>
                 <div class="settings-summary-grid">
                     <article class="mini-stat"><span>Signed-in User</span><strong id="settingsUsername">—</strong></article>
                     <article class="mini-stat accent"><span>Access Role</span><strong id="settingsRole">—</strong></article>
                 </div>
             </section>
             <section class="section-block">
-                <div class="page-header compact"><div><h2>Shared Data Cache</h2><p>Shared records currently cached in this browser for the active system session.</p></div></div>
+                <div class="page-header compact"><div><h2>Shared Data Cache</h2><p>Shared records saved in this browser session.</p></div></div>
                 <div class="settings-summary-grid">
                     <article class="mini-stat"><span>Donation Records</span><strong id="settingsDonationCount">0</strong></article>
                     <article class="mini-stat accent"><span>Donor Records</span><strong id="settingsDonorCount">0</strong></article>
                     <article class="mini-stat success"><span>Beneficiary Records</span><strong id="settingsBeneficiaryCount">0</strong></article>
                     <article class="mini-stat info"><span>Project Records</span><strong id="settingsProjectCount">0</strong></article>
                 </div>
-                <p class="request-storage-note">The system uses Supabase for shared records and keeps a browser cache for the current app session. These counts show what is available in this browser; they do not confirm backup status. Do not treat browser storage as a secure backup.</p>
+                <p class="request-storage-note">Supabase stores shared records. This browser keeps a temporary cache. These counts are not a backup; do not rely on browser storage to protect your data.</p>
             </section>
             <section class="section-block">
-                <div class="page-header compact"><div><h2>System Configuration</h2><p>Application environment details.</p></div></div>
+                <div class="page-header compact"><div><h2>System Configuration</h2><p>System details and links.</p></div></div>
                 <dl class="settings-detail-list">
                     <div><dt>Record storage</dt><dd>Supabase shared database with a browser cache</dd></div>
                     <div><dt>Storage entries in this browser</dt><dd id="settingsStorageCount">0</dd></div>
