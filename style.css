@@ -6613,3 +6613,18 @@ body[data-page="dashboard"] .donor-table-wrapper .donor-action-group .btn-danger
     color: #fff !important;
     box-shadow: none !important;
 }
+
+/* Keep typography consistent across every public and admin page. */
+:root {
+    --kbk-body-font: "Segoe UI", Arial, sans-serif;
+    --kbk-display-font: Georgia, "Times New Roman", serif;
+}
+
+body,
+body :is(button, input, select, textarea) {
+    font-family: var(--kbk-body-font) !important;
+}
+
+body :is(h1, h2, h3, h4, .section-title) {
+    font-family: var(--kbk-display-font) !important;
+}
