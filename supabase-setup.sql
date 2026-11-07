@@ -281,19 +281,13 @@ create table if not exists public.kbk_assistance_requests (
 
 alter table public.kbk_assistance_requests enable row level security;
 
-revoke all on public.kbk_assistance_requests from anon, authenticated;
-revoke insert (requester_name, contact, assistance_type, quantity, description)
-    on public.kbk_assistance_requests from anon, authenticated;
+revoke all on public.kbk_assistance_requests from public, anon, authenticated;
 grant select, delete on public.kbk_assistance_requests to authenticated;
 grant update (requester_name, contact, assistance_type, quantity, description, status, reviewed_at)
     on public.kbk_assistance_requests to authenticated;
 revoke usage, select on sequence public.kbk_assistance_requests_id_seq from anon, authenticated;
 
 drop policy if exists "Public can submit assistance requests" on public.kbk_assistance_requests;
-create policy "Public can submit assistance requests"
-    on public.kbk_assistance_requests for insert
-    to anon, authenticated
-    with check (status = 'Pending' and reviewed_at is null);
 
 drop policy if exists "Active KBK admins can read assistance requests" on public.kbk_assistance_requests;
 create policy "Active KBK admins can read assistance requests"
@@ -374,18 +368,12 @@ alter table public.kbk_public_feedback_messages
     add constraint kbk_public_feedback_messages_status_check
     check (status in ('New', 'Replied', 'Resolved'));
 
-revoke all on public.kbk_public_feedback_messages from anon, authenticated;
-revoke insert (requester_name, contact, subject, message)
-    on public.kbk_public_feedback_messages from anon, authenticated;
+revoke all on public.kbk_public_feedback_messages from public, anon, authenticated;
 grant select, delete on public.kbk_public_feedback_messages to authenticated;
 grant update (status) on public.kbk_public_feedback_messages to authenticated;
 revoke usage, select on sequence public.kbk_public_feedback_messages_id_seq from anon, authenticated;
 
 drop policy if exists "Public can send contact messages" on public.kbk_public_feedback_messages;
-create policy "Public can send contact messages"
-    on public.kbk_public_feedback_messages for insert
-    to anon, authenticated
-    with check (status = 'New');
 
 drop policy if exists "Active KBK admins can read contact messages" on public.kbk_public_feedback_messages;
 create policy "Active KBK admins can read contact messages"

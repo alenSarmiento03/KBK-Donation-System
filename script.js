@@ -14,6 +14,7 @@ const ACCOUNT_KEY = 'kbk_accounts';
 const ACTIVITY_KEY = 'kbk_activity_log';
 const INVENTORY_KEY = 'kbk_inventory';
 const FEEDBACK_KEY = 'kbk_public_feedback';
+const PUBLIC_CACHE_PREFIX = 'kbk_public_snapshot_';
 const DONATION_RECEIPTS_BUCKET = 'kbk-donation-receipts';
 const PUBLIC_TRANSPARENCY_BUCKET = 'kbk-public-transparency';
 const PUBLIC_TRANSPARENCY_TYPES = new Map([
@@ -215,6 +216,30 @@ function cacheRemoteValue(key, value) {
     }
 }
 
+function publicSnapshotCacheKey(key) {
+    return `${PUBLIC_CACHE_PREFIX}${key}`;
+}
+
+function sharedCacheKey(key) {
+    return document.body?.dataset?.page === 'public' ? publicSnapshotCacheKey(key) : key;
+}
+
+function readSharedCache(key) {
+    return localStorage.getItem(sharedCacheKey(key));
+}
+
+function writeSharedCache(key, value) {
+    localStorage.setItem(sharedCacheKey(key), JSON.stringify(value));
+}
+
+function cachePublicSnapshotValue(key, value) {
+    try {
+        localStorage.setItem(publicSnapshotCacheKey(key), JSON.stringify(value));
+    } catch (error) {
+        throw new Error(`Unable to cache public ${key} data in this browser: ${error.message}`);
+    }
+}
+
 async function loadAdminSharedData() {
     const { data, error } = await supabaseClient
         .from('kbk_app_data')
@@ -259,8 +284,8 @@ async function loadPublicSharedData() {
     publicBeneficiariesHelped = Number.isInteger(data?.kbk_public_metadata?.beneficiariesHelped)
         ? data.kbk_public_metadata.beneficiariesHelped : null;
     for (const key of SHARED_DATA_KEYS) {
-        if (Object.prototype.hasOwnProperty.call(data, key)) cacheRemoteValue(key, data[key]);
-        else cacheRemoteValue(key, []);
+        if (Object.prototype.hasOwnProperty.call(data, key)) cachePublicSnapshotValue(key, data[key]);
+        else cachePublicSnapshotValue(key, []);
     }
     publicDataUnavailable = false;
     publicDataLoadedAt = new Date();
@@ -546,9 +571,9 @@ const DEFAULT_PROJECTS = [
 /* ---------- DATA HELPERS ---------- */
 function getDonations() {
     if (publicDataUnavailable && document.body.dataset.page === 'public') return [];
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = readSharedCache(STORAGE_KEY);
     if (!raw) {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_DONATIONS));
+        writeSharedCache(STORAGE_KEY, DEFAULT_DONATIONS);
         return [...DEFAULT_DONATIONS];
     }
     try {
@@ -566,7 +591,7 @@ function getDonations() {
         });
         if (hasTrackingCodes) {
             try {
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(cleanedDonations));
+                writeSharedCache(STORAGE_KEY, cleanedDonations);
             } catch (error) {
                 console.error('Unable to remove obsolete donation tracking codes from browser storage.', error);
             }
@@ -921,9 +946,10 @@ function createDonationAcknowledgement(donation) {
 }
 
 function getDonors() {
-    const raw = localStorage.getItem(DONOR_KEY);
+    if (publicDataUnavailable && document.body.dataset.page === 'public') return [];
+    const raw = readSharedCache(DONOR_KEY);
     if (!raw) {
-        localStorage.setItem(DONOR_KEY, JSON.stringify(DEFAULT_DONORS));
+        writeSharedCache(DONOR_KEY, DEFAULT_DONORS);
         return [...DEFAULT_DONORS];
     }
     try { return JSON.parse(raw); } catch { return [...DEFAULT_DONORS]; }
@@ -935,9 +961,9 @@ function saveDonors(list) {
 
 function getBeneficiaries() {
     if (publicDataUnavailable && document.body.dataset.page === 'public') return [];
-    const raw = localStorage.getItem(BENEFICIARY_KEY);
+    const raw = readSharedCache(BENEFICIARY_KEY);
     if (!raw) {
-        localStorage.setItem(BENEFICIARY_KEY, JSON.stringify(DEFAULT_BENEFICIARIES));
+        writeSharedCache(BENEFICIARY_KEY, DEFAULT_BENEFICIARIES);
         return DEFAULT_BENEFICIARIES.map(beneficiary => ({ ...beneficiary, assistance: [...beneficiary.assistance] }));
     }
     try {
@@ -956,9 +982,9 @@ function saveBeneficiaries(list) {
 
 function readStoredList(key, label, defaults = []) {
     if (publicDataUnavailable && document.body.dataset.page === 'public') return [];
-    const raw = localStorage.getItem(key);
+    const raw = readSharedCache(key);
     if (!raw) {
-        localStorage.setItem(key, JSON.stringify(defaults));
+        writeSharedCache(key, defaults);
         return [...defaults];
     }
     try {
@@ -4891,7 +4917,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         await loadPublicTransparencyEvidence();
         renderPublicPage();
         window.addEventListener('storage', event => {
-            const publicDataKeys = [STORAGE_KEY, PROJECT_KEY, DISTRIBUTION_KEY, EXPENSE_KEY, BENEFICIARY_KEY, INVENTORY_KEY];
+            const publicDataKeys = [STORAGE_KEY, PROJECT_KEY, DISTRIBUTION_KEY, EXPENSE_KEY, BENEFICIARY_KEY, INVENTORY_KEY]
+                .map(publicSnapshotCacheKey);
             if (event.key !== null && !publicDataKeys.includes(event.key)) return;
             renderPublicPage();
         });
