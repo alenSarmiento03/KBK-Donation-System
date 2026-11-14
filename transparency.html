@@ -1,59 +1,217 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Review KBK's verified donation and allocation summaries.">
-    <link rel="canonical" href="transparency.html">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Review KBK's verified donation and allocation summaries." />
+    <link rel="canonical" href="transparency.html" />
     <title>Transparency Dashboard — KBK</title>
-    <meta property="og:type" content="website">
-    <meta property="og:site_name" content="KBK Community Donation Tracking System">
-    <meta property="og:title" content="Transparency Dashboard — KBK">
-    <meta property="og:description" content="Review KBK's verified donation and allocation summaries.">
-    <link rel="stylesheet" href="style.css">
-</head>
-<body data-page="public" class="public-editorial-page page-progress">
-    <nav class="navbar"><div class="navbar-container"><a href="index.html" class="navbar-brand"><div class="logo"><img width="512" height="512" decoding="async" src="photo.png/kbk-community-emblem-optimized.jpg" alt="KBK logo"></div><span class="brand-name">KBK Community Donation Tracking System</span></a><ul class="navbar-menu"></ul></div></nav>
-    <header class="public-page-hero progress-hero"><div class="public-page-hero-copy"><p class="eyebrow">OPEN BOOKS · SHARED PROGRESS</p><h1>See what we<br><em>make possible.</em></h1><p>Follow verified contributions, recorded allocations, and the projects moving forward with community support.</p><a class="editorial-primary-link" href="donate.html">Join the impact <span aria-hidden="true">↗</span></a></div><div class="progress-hero-art" aria-hidden="true"><span class="progress-ring"></span><strong>GIVE<br><i>→</i><br>GROW</strong><small>COMMUNITY PROGRESS</small></div></header>
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="KBK Community Donation Tracking System" />
+    <meta property="og:title" content="Transparency Dashboard — KBK" />
+    <meta
+      property="og:description"
+      content="Review KBK's verified donation and allocation summaries."
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body data-page="public" class="public-editorial-page page-progress">
+    <nav class="navbar">
+      <div class="navbar-container">
+        <a href="index.html" class="navbar-brand"
+          ><div class="logo">
+            <img
+              width="512"
+              height="512"
+              decoding="async"
+              src="photo.png/kbk-community-emblem-optimized.jpg"
+              alt="KBK logo"
+            />
+          </div>
+          <span class="brand-name">KBK Community Donation Tracking System</span></a
+        >
+        <ul class="navbar-menu"></ul>
+      </div>
+    </nav>
+    <header class="public-page-hero progress-hero">
+      <div class="public-page-hero-copy">
+        <p class="eyebrow">OPEN BOOKS · SHARED PROGRESS</p>
+        <h1>See what we<br /><em>make possible.</em></h1>
+        <p>
+          Follow verified contributions, recorded allocations, and the projects moving forward with
+          community support.
+        </p>
+      </div>
+      <div class="progress-hero-art" aria-hidden="true">
+        <span class="progress-ring"></span><strong>GIVE<br /><i>→</i><br />GROW</strong
+        ><small>COMMUNITY PROGRESS</small>
+      </div>
+    </header>
     <main class="container editorial-container">
-        <div class="editorial-section-heading"><p class="eyebrow">THE NUMBERS, IN THE OPEN</p><h2>Community progress</h2><p>Aggregate totals from verified donation and expense records, allocations, and distributions maintained by KBK.</p></div>
-        <div class="stats-grid transparency-stats">
-            <article class="stat-card"><div class="stat-label"><span class="public-stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 7h18v12H3zM3 10h18M7 15h3"/><path d="M7 4h14v3"/></svg></span>Verified Cash Donations</div><div class="stat-value" id="publicTotal">₱0.00</div><div class="stat-sub">Approved records only</div></article>
-            <article class="stat-card accent"><div class="stat-label"><span class="public-stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m3 7 9-4 9 4-9 4zM3 7v10l9 4 9-4V7M12 11v10"/></svg></span>Items Donated</div><div class="stat-value" id="publicInKind">0</div><div class="stat-sub"><span id="publicInKindRecords">0</span> approved item donations</div></article>
-            <article class="stat-card success"><div class="stat-label"><span class="public-stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 3h14v18H5zM8 8h8m-8 4h8"/><path d="m8 16 2 2 5-5"/></svg></span>Approved Donations</div><div class="stat-value" id="publicVerifiedCount">0</div></article>
-            <article class="stat-card info"><div class="stat-label"><span class="public-stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-4 2-6 6-6s6 2 6 6m2-8a3 3 0 1 0 0-6m1 9c2 .5 3 2 3 4"/></svg></span>Donors</div><div class="stat-value" id="publicDonors">0</div></article>
-            <article class="stat-card accent"><div class="stat-label"><span class="public-stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 6h6v5H4zM14 13h6v5h-6zM10 8h4v7m0 0h-4"/></svg></span>Funds Allocated</div><div class="stat-value" id="publicAllocated">₱0.00</div></article>
-            <article class="stat-card success"><div class="stat-label"><span class="public-stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4zM8 8h8m-8 4h8m-8 4h5"/></svg></span>Reviewed Expenses</div><div class="stat-value" id="publicUsed">₱0.00</div></article>
-            <article class="stat-card warning"><div class="stat-label"><span class="public-stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-4 2-6 6-6s6 2 6 6m2-9 2 2 3-4"/></svg></span>People Helped</div><div class="stat-value" id="publicHelped">0</div></article>
-            <article class="stat-card"><div class="stat-label"><span class="public-stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 20V9l8-5 8 5v11M9 20v-6h6v6M3 9l9-6 9 6"/></svg></span>Current Projects</div><div class="stat-value" id="publicProjects">0</div></article>
+      <div class="editorial-section-heading">
+        <p class="eyebrow">THE NUMBERS, IN THE OPEN</p>
+        <h2>Community progress</h2>
+        <p>
+          Aggregate totals from verified donation and expense records, allocations, and
+          distributions maintained by KBK.
+        </p>
+      </div>
+      <div class="stats-grid transparency-stats">
+        <article class="stat-card">
+          <div class="stat-label">
+            <span class="public-stat-icon" aria-hidden="true"
+              ><svg viewBox="0 0 24 24">
+                <path d="M3 7h18v12H3zM3 10h18M7 15h3" />
+                <path d="M7 4h14v3" /></svg></span
+            >Verified Cash Donations
+          </div>
+          <div class="stat-value" id="publicTotal">₱0.00</div>
+          <div class="stat-sub">Approved records only</div>
+        </article>
+        <article class="stat-card accent">
+          <div class="stat-label">
+            <span class="public-stat-icon" aria-hidden="true"
+              ><svg viewBox="0 0 24 24">
+                <path d="m3 7 9-4 9 4-9 4zM3 7v10l9 4 9-4V7M12 11v10" /></svg></span
+            >Items Donated
+          </div>
+          <div class="stat-value" id="publicInKind">0</div>
+          <div class="stat-sub">
+            <span id="publicInKindRecords">0</span> approved item donations
+          </div>
+        </article>
+        <article class="stat-card success">
+          <div class="stat-label">
+            <span class="public-stat-icon" aria-hidden="true"
+              ><svg viewBox="0 0 24 24">
+                <path d="M5 3h14v18H5zM8 8h8m-8 4h8" />
+                <path d="m8 16 2 2 5-5" /></svg></span
+            >Approved Donations
+          </div>
+          <div class="stat-value" id="publicVerifiedCount">0</div>
+        </article>
+        <article class="stat-card info">
+          <div class="stat-label">
+            <span class="public-stat-icon" aria-hidden="true"
+              ><svg viewBox="0 0 24 24">
+                <circle cx="9" cy="8" r="3" />
+                <path
+                  d="M3 20c0-4 2-6 6-6s6 2 6 6m2-8a3 3 0 1 0 0-6m1 9c2 .5 3 2 3 4"
+                /></svg></span
+            >Donors
+          </div>
+          <div class="stat-value" id="publicDonors">0</div>
+        </article>
+        <article class="stat-card accent">
+          <div class="stat-label">
+            <span class="public-stat-icon" aria-hidden="true"
+              ><svg viewBox="0 0 24 24">
+                <path d="M4 6h6v5H4zM14 13h6v5h-6zM10 8h4v7m0 0h-4" /></svg></span
+            >Funds Allocated
+          </div>
+          <div class="stat-value" id="publicAllocated">₱0.00</div>
+        </article>
+        <article class="stat-card success">
+          <div class="stat-label">
+            <span class="public-stat-icon" aria-hidden="true"
+              ><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4zM8 8h8m-8 4h8m-8 4h5" /></svg></span
+            >Reviewed Expenses
+          </div>
+          <div class="stat-value" id="publicUsed">₱0.00</div>
+        </article>
+        <article class="stat-card warning">
+          <div class="stat-label">
+            <span class="public-stat-icon" aria-hidden="true"
+              ><svg viewBox="0 0 24 24">
+                <circle cx="9" cy="8" r="3" />
+                <path d="M3 20c0-4 2-6 6-6s6 2 6 6m2-9 2 2 3-4" /></svg></span
+            >People Helped
+          </div>
+          <div class="stat-value" id="publicHelped">0</div>
+        </article>
+        <article class="stat-card">
+          <div class="stat-label">
+            <span class="public-stat-icon" aria-hidden="true"
+              ><svg viewBox="0 0 24 24">
+                <path d="M4 20V9l8-5 8 5v11M9 20v-6h6v6M3 9l9-6 9 6" /></svg></span
+            >Current Projects
+          </div>
+          <div class="stat-value" id="publicProjects">0</div>
+        </article>
+      </div>
+      <section class="transparency-chart" aria-labelledby="funds-chart-heading">
+        <h2 id="funds-chart-heading">How Cash Donations Are Used</h2>
+        <p class="chart-caption">
+          Bars compare verified figures with total verified cash donations received.
+        </p>
+        <div class="transparency-progress">
+          <div class="progress-label">
+            <label for="publicAllocatedProgress">Allocated</label
+            ><span id="publicAllocatedPercent">0%</span>
+          </div>
+          <progress id="publicAllocatedProgress" max="100" value="0">0%</progress>
         </div>
-        <section class="transparency-chart" aria-labelledby="funds-chart-heading">
-            <h2 id="funds-chart-heading">How Cash Donations Are Used</h2>
-            <p class="chart-caption">Bars compare verified figures with total verified cash donations received.</p>
-            <div class="transparency-progress"><div class="progress-label"><label for="publicAllocatedProgress">Allocated</label><span id="publicAllocatedPercent">0%</span></div><progress id="publicAllocatedProgress" max="100" value="0">0%</progress></div>
-            <div class="transparency-progress"><div class="progress-label"><label for="publicUsedProgress">Verified expenses</label><span id="publicUsedPercent">0%</span></div><progress id="publicUsedProgress" max="100" value="0">0%</progress></div>
-        </section>
-        <section class="public-campaigns" aria-labelledby="public-campaign-progress-heading">
-            <h2 class="section-title" id="public-campaign-progress-heading">Current Campaign Progress</h2>
-            <p class="transparency-intro">Progress includes verified cash donations linked to each active campaign.</p>
-            <div class="impact-grid" id="publicCampaignProgress" aria-live="polite"></div>
-        </section>
-        <section class="public-evidence-section" aria-labelledby="public-evidence-heading">
-            <div class="editorial-section-heading"><p class="eyebrow">SUPPORTING DOCUMENTS</p><h2 id="public-evidence-heading">Published Transparency Files</h2><p>These documents were reviewed for public sharing. Original donation receipts remain private.</p></div>
-            <div class="public-evidence-list" id="publicTransparencyEvidence" aria-live="polite"><p class="transparency-intro">Loading published documents…</p></div>
-        </section>
-        <p class="public-privacy-note">Totals include only donations that KBK has checked and approved. Donors are named only when they have given permission; otherwise, they appear as Anonymous Donor. Recipient names and contact details are never shown. This demo stores records in this browser, so figures are not shared across devices.</p>
-        <section class="public-impact" aria-labelledby="donor-recognition-heading">
-            <div class="recognition-section-heading">
-                <span class="recognition-heading-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 15.5a5.5 5.5 0 1 0 0-11 5.5 5.5 0 0 0 0 11Z"/><path d="m8.5 14.5-1 6 4.5-2.5 4.5 2.5-1-6M9.5 10.5l1.6 1.6 3.4-3.5"/></svg></span>
-                <div><p class="eyebrow">A THANK YOU TO OUR COMMUNITY</p><h2 class="section-title" id="donor-recognition-heading">Donor Recognition</h2>
-                    <p class="transparency-intro">We recognize verified contributions with care. Names appear only when a donor has agreed to public recognition.</p></div>
-            </div>
-            <div class="impact-grid" id="publicDonorRecognition" aria-live="polite"></div>
-        </section>
+        <div class="transparency-progress">
+          <div class="progress-label">
+            <label for="publicUsedProgress">Verified expenses</label
+            ><span id="publicUsedPercent">0%</span>
+          </div>
+          <progress id="publicUsedProgress" max="100" value="0">0%</progress>
+        </div>
+      </section>
+      <section class="public-campaigns" aria-labelledby="public-campaign-progress-heading">
+        <h2 class="section-title" id="public-campaign-progress-heading">
+          Current Campaign Progress
+        </h2>
+        <p class="transparency-intro">
+          Progress includes verified cash donations linked to each active campaign.
+        </p>
+        <div class="impact-grid" id="publicCampaignProgress" aria-live="polite"></div>
+      </section>
+      <section class="public-evidence-section" aria-labelledby="public-evidence-heading">
+        <div class="editorial-section-heading">
+          <p class="eyebrow">SUPPORTING DOCUMENTS</p>
+          <h2 id="public-evidence-heading">Published Transparency Files</h2>
+          <p>
+            These documents were reviewed for public sharing. Original donation receipts remain
+            private.
+          </p>
+        </div>
+        <div class="public-evidence-list" id="publicTransparencyEvidence" aria-live="polite">
+          <p class="transparency-intro">Loading published documents…</p>
+        </div>
+      </section>
+      <p class="public-privacy-note">
+        Totals include only donations that KBK has checked and approved. Donors are named only when
+        they have given permission; otherwise, they appear as Anonymous Donor. Recipient names and
+        contact details are never shown. This demo stores records in this browser, so figures are
+        not shared across devices.
+      </p>
+      <section class="public-impact" aria-labelledby="donor-recognition-heading">
+        <div class="recognition-section-heading">
+          <span class="recognition-heading-icon" aria-hidden="true"
+            ><svg viewBox="0 0 24 24">
+              <path d="M12 15.5a5.5 5.5 0 1 0 0-11 5.5 5.5 0 0 0 0 11Z" />
+              <path d="m8.5 14.5-1 6 4.5-2.5 4.5 2.5-1-6M9.5 10.5l1.6 1.6 3.4-3.5" /></svg
+          ></span>
+          <div>
+            <p class="eyebrow">A THANK YOU TO OUR COMMUNITY</p>
+            <h2 class="section-title" id="donor-recognition-heading">Donor Recognition</h2>
+            <p class="transparency-intro">
+              We recognize verified contributions with care. Names appear only when a donor has
+              agreed to public recognition.
+            </p>
+          </div>
+        </div>
+        <div class="impact-grid" id="publicDonorRecognition" aria-live="polite"></div>
+      </section>
     </main>
-    <footer class="footer"><p>© 2026 KBK Community Donation Tracking System — Transparency. Accountability. Community.</p></footer>
+    <footer class="footer">
+      <p>
+        © 2026 KBK Community Donation Tracking System — Transparency. Accountability. Community.
+      </p>
+    </footer>
     <script src="supabase-config.js"></script>
-<script src="script.js"></script>
-</body>
+    <script src="script.js"></script>
+  </body>
 </html>

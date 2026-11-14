@@ -1,35 +1,82 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="View recent donations approved by KBK, with donor names shown only when permission was given.">
-    <link rel="canonical" href="track-donation.html">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="View recent donations approved by KBK, with donor names shown only when permission was given."
+    />
+    <link rel="canonical" href="track-donation.html" />
     <title>Donation List — KBK</title>
-    <meta property="og:type" content="website">
-    <meta property="og:site_name" content="KBK Community Donation Tracking System">
-    <meta property="og:title" content="Donation List — KBK">
-    <meta property="og:description" content="View recent donations approved by KBK, with donor names shown only when permission was given.">
-    <link rel="stylesheet" href="style.css">
-</head>
-<body data-page="public">
-    <nav class="navbar"><div class="navbar-container"><a href="index.html" class="navbar-brand"><div class="logo"><img width="512" height="512" decoding="async" src="photo.png/kbk-community-emblem-optimized.jpg" alt="KBK logo"></div><span class="brand-name">KBK Community Donation Tracking System</span></a><ul class="navbar-menu"></ul></div></nav>
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="KBK Community Donation Tracking System" />
+    <meta property="og:title" content="Donation List — KBK" />
+    <meta
+      property="og:description"
+      content="View recent donations approved by KBK, with donor names shown only when permission was given."
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body data-page="public">
+    <nav class="navbar">
+      <div class="navbar-container">
+        <a href="index.html" class="navbar-brand"
+          ><div class="logo">
+            <img
+              width="512"
+              height="512"
+              decoding="async"
+              src="photo.png/kbk-community-emblem-optimized.jpg"
+              alt="KBK logo"
+            />
+          </div>
+          <span class="brand-name">KBK Community Donation Tracking System</span></a
+        >
+        <ul class="navbar-menu"></ul>
+      </div>
+    </nav>
     <main class="container">
-        <h1 class="section-title">Donation List</h1>
-        <p class="transparency-intro">Browse donations that KBK has reviewed and approved. Donor names appear only when permission to share them was given.</p>
-        <section class="section-block public-donation-list" aria-labelledby="donation-list-heading">
-            <div class="page-header compact"><div><h2 id="donation-list-heading">Recent Approved Donations</h2><p id="publicDonationListDescription">Approved contributions shared by KBK.</p></div></div>
-            <div class="table-wrapper">
-                <table>
-                    <thead><tr><th>Donation ID</th><th>Donor</th><th>Date</th><th>Donation</th><th>Purpose</th><th>Status</th></tr></thead>
-                    <tbody id="publicDonationListBody" aria-live="polite"></tbody>
-                </table>
-            </div>
-        </section>
-        <p class="public-privacy-note">Only approved donations are listed. Donor contact details and private information are not shown. The public list is loaded from KBK’s shared data service when configured; some records may also be cached in this browser for display.</p>
+      <h1 class="section-title">Donation List</h1>
+      <p class="transparency-intro">
+        Browse donations that KBK has reviewed and approved. Donor names appear only when permission
+        to share them was given.
+      </p>
+      <section class="section-block public-donation-list" aria-labelledby="donation-list-heading">
+        <div class="page-header compact">
+          <div>
+            <h2 id="donation-list-heading">Recent Approved Donations</h2>
+            <p id="publicDonationListDescription">Approved contributions shared by KBK.</p>
+          </div>
+        </div>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Donation ID</th>
+                <th>Donor</th>
+                <th>Date</th>
+                <th>Donation</th>
+                <th>Purpose</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="publicDonationListBody" aria-live="polite"></tbody>
+          </table>
+        </div>
+      </section>
+      <p class="public-privacy-note">
+        Only approved donations are listed. Donor contact details and private information are not
+        shown. The public list is loaded from KBK’s shared data service when configured; some
+        records may also be cached in this browser for display.
+      </p>
     </main>
-    <footer class="footer"><p>© 2026 KBK Community Donation Tracking System — Transparency. Accountability. Community.</p></footer>
+    <footer class="footer">
+      <p>
+        © 2026 KBK Community Donation Tracking System — Transparency. Accountability. Community.
+      </p>
+    </footer>
     <script src="supabase-config.js"></script>
-<script src="script.js"></script>
-</body>
+    <script src="script.js"></script>
+  </body>
 </html>

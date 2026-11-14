@@ -46,12 +46,14 @@ Deno.serve(async (request) => {
     "",
     "Open the admin Requests page to review it. Message and contact details are intentionally omitted from this notification.",
     inboxUrl,
-  ].filter(Boolean).join("\n");
+  ]
+    .filter(Boolean)
+    .join("\n");
 
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
-      "Authorization": `Bearer ${apiKey}`,
+      Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({ from: sender, to: [recipient], subject, text }),

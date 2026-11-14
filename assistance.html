@@ -1,42 +1,170 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Lipa City LGUs can submit an assistance request for KBK to review.">
-    <link rel="canonical" href="assistance.html">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Lipa City LGUs can submit an assistance request for KBK to review."
+    />
+    <link rel="canonical" href="assistance.html" />
     <title>Request Assistance — KBK</title>
-    <meta property="og:type" content="website">
-    <meta property="og:site_name" content="KBK Community Donation Tracking System">
-    <meta property="og:title" content="Request Assistance — KBK">
-    <meta property="og:description" content="Lipa City LGUs can submit an assistance request for KBK to review.">
-    <link rel="stylesheet" href="style.css">
-</head>
-<body data-page="public" class="public-editorial-page page-assistance">
-    <nav class="navbar"><div class="navbar-container"><a href="index.html" class="navbar-brand"><div class="logo"><img width="512" height="512" decoding="async" src="photo.png/kbk-community-emblem-optimized.jpg" alt="KBK logo"></div><span class="brand-name">KBK Community Donation Tracking System</span></a><ul class="navbar-menu"></ul></div></nav>
-    <header class="public-page-hero assistance-hero"><div class="public-page-hero-copy"><p class="eyebrow">LIPA CITY, BATANGAS</p><h1>Working together<br>for <em>our city.</em></h1><p>Only authorized Lipa City LGU representatives can request assistance. KBK will review each request.</p><div class="assistance-promise"><span class="assistance-privacy-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M12 3 4.5 6v5c0 4.6 3.1 8 7.5 10 4.4-2 7.5-5.4 7.5-10V6L12 3Z"/><path d="m8.5 12 2.3 2.3 4.7-4.8"/></svg></span><span><strong>Your request is private.</strong><br>Only active KBK administrators can view submitted requests.</span></div></div><div class="assistance-hero-art" aria-hidden="true"><span class="assistance-sun">✳</span><span class="assistance-circle assistance-circle-a"></span><span class="assistance-circle assistance-circle-b"></span><strong>TOGETHER,<br>WE FIND A WAY.</strong><small>KBK COMMUNITY CARE</small></div></header>
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="KBK Community Donation Tracking System" />
+    <meta property="og:title" content="Request Assistance — KBK" />
+    <meta
+      property="og:description"
+      content="Lipa City LGUs can submit an assistance request for KBK to review."
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body data-page="public" class="public-editorial-page page-assistance">
+    <nav class="navbar">
+      <div class="navbar-container">
+        <a href="index.html" class="navbar-brand"
+          ><div class="logo">
+            <img
+              width="512"
+              height="512"
+              decoding="async"
+              src="photo.png/kbk-community-emblem-optimized.jpg"
+              alt="KBK logo"
+            />
+          </div>
+          <span class="brand-name">KBK Community Donation Tracking System</span></a
+        >
+        <ul class="navbar-menu"></ul>
+      </div>
+    </nav>
+    <header class="public-page-hero assistance-hero">
+      <div class="public-page-hero-copy">
+        <p class="eyebrow">LIPA CITY, BATANGAS</p>
+        <h1>Working together<br />for <em>our city.</em></h1>
+        <p>
+          Only authorized Lipa City LGU representatives can request assistance. KBK will review each
+          request.
+        </p>
+      </div>
+      <div class="assistance-hero-art" aria-hidden="true">
+        <span class="assistance-sun">✳</span
+        ><span class="assistance-circle assistance-circle-a"></span
+        ><span class="assistance-circle assistance-circle-b"></span
+        ><strong>TOGETHER,<br />WE FIND A WAY.</strong><small>KBK COMMUNITY CARE</small>
+      </div>
+    </header>
     <main class="container editorial-container assistance-container">
-        <section class="public-assistance-request" aria-labelledby="assistance-request-heading">
-            <div class="assistance-form-heading"><p class="eyebrow">ASSISTANCE REQUEST</p><h2 class="section-title" id="assistance-request-heading">For Lipa City LGUs only</h2><p class="transparency-intro">An authorized Lipa City LGU representative must submit this form. Individual and family requests are not accepted. Approval is not guaranteed.</p></div>
-            <p class="request-storage-note">Submitting this form saves your request in KBK’s shared admin inbox, where active KBK administrators can read it. To email KBK directly instead, <a href="https://mail.google.com/mail/?view=cm&amp;fs=1&amp;to=ryealensarmiento%40gmail.com">open Gmail and send your request to KBK</a>; that email goes to the KBK Gmail inbox, not the website inbox. Do not include passwords, financial details, or unnecessary medical information. Form requests are scheduled for deletion after 180 days; KBK must confirm the deletion job is active. Read the <a href="privacy.html">Privacy Notice</a>.</p>
-            <form id="publicAssistanceForm" class="public-request-form">
-                <div class="form-row">
-                    <div class="form-group"><label for="requestName">LGU office or department</label><input class="form-control" id="requestName" name="name" type="text" maxlength="120" autocomplete="organization" required aria-describedby="requestNameHelp"><small id="requestNameHelp">Add the representative’s name and role in the request details.</small></div>
-                    <div class="form-group"><label for="requestContact">Official email or phone number</label><input class="form-control" id="requestContact" name="contact" type="text" maxlength="160" autocomplete="on" placeholder="office@example.gov.ph or phone number" required aria-describedby="requestContactHelp"><small id="requestContactHelp">Enter a work email or phone number.</small></div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group"><label for="requestType">Type of assistance</label><select class="form-control" id="requestType" name="type" required><option value="">Select a type</option><option>Food</option><option>Education</option><option>Medical</option><option>Emergency</option><option>Other</option></select></div>
-                    <div class="form-group"><label for="requestQuantity">Quantity needed</label><input class="form-control" id="requestQuantity" name="quantity" type="text" maxlength="120" placeholder="e.g. 2 food packs"></div>
-                </div>
-                <div class="form-group"><label for="requestDescription">What help do you need?</label><textarea class="form-control" id="requestDescription" name="description" rows="4" minlength="10" maxlength="1500" required aria-describedby="requestDescriptionHelp"></textarea><small id="requestDescriptionHelp">Share only what KBK needs to understand the request.</small></div>
-                <label class="request-consent"><input id="requestLguEligibility" type="checkbox" required> I confirm I am submitting this request on behalf of a Local Government Unit in Lipa City.</label>
-                <button class="btn btn-primary" type="submit">Submit Request</button>
-                <p class="request-form-message" id="requestFormMessage" role="status" aria-live="polite"></p>
-            </form>
-        </section>
+      <section class="public-assistance-request" aria-labelledby="assistance-request-heading">
+        <div class="assistance-form-heading">
+          <p class="eyebrow">ASSISTANCE REQUEST</p>
+          <h2 class="section-title" id="assistance-request-heading">For Lipa City LGUs only</h2>
+          <p class="transparency-intro">
+            An authorized Lipa City LGU representative must submit this form. Individual and family
+            requests are not accepted. Approval is not guaranteed.
+          </p>
+        </div>
+        <p class="request-storage-note">
+          Submitting this form saves your request in KBK’s shared admin inbox, where active KBK
+          administrators can read it. To email KBK directly instead,
+          <a
+            href="https://mail.google.com/mail/?view=cm&amp;fs=1&amp;to=ryealensarmiento%40gmail.com"
+            >open Gmail and send your request to KBK</a
+          >; that email goes to the KBK Gmail inbox, not the website inbox. Do not include
+          passwords, financial details, or unnecessary medical information. Form requests are
+          scheduled for deletion after 180 days; KBK must confirm the deletion job is active. Read
+          the <a href="privacy.html">Privacy Notice</a>.
+        </p>
+        <form id="publicAssistanceForm" class="public-request-form">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="requestName">LGU office or department</label
+              ><input
+                class="form-control"
+                id="requestName"
+                name="name"
+                type="text"
+                maxlength="120"
+                autocomplete="organization"
+                required
+                aria-describedby="requestNameHelp"
+              /><small id="requestNameHelp"
+                >Add the representative’s name and role in the request details.</small
+              >
+            </div>
+            <div class="form-group">
+              <label for="requestContact">Official email or phone number</label
+              ><input
+                class="form-control"
+                id="requestContact"
+                name="contact"
+                type="text"
+                maxlength="160"
+                autocomplete="on"
+                placeholder="office@example.gov.ph or phone number"
+                required
+                aria-describedby="requestContactHelp"
+              /><small id="requestContactHelp">Enter a work email or phone number.</small>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="requestType">Type of assistance</label
+              ><select class="form-control" id="requestType" name="type" required>
+                <option value="">Select a type</option>
+                <option>Food</option>
+                <option>Education</option>
+                <option>Medical</option>
+                <option>Emergency</option>
+                <option>Other</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="requestQuantity">Quantity needed</label
+              ><input
+                class="form-control"
+                id="requestQuantity"
+                name="quantity"
+                type="text"
+                maxlength="120"
+                placeholder="e.g. 2 food packs"
+              />
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="requestDescription">What help do you need?</label
+            ><textarea
+              class="form-control"
+              id="requestDescription"
+              name="description"
+              rows="4"
+              minlength="10"
+              maxlength="1500"
+              required
+              aria-describedby="requestDescriptionHelp"
+            ></textarea
+            ><small id="requestDescriptionHelp"
+              >Share only what KBK needs to understand the request.</small
+            >
+          </div>
+          <label class="request-consent"
+            ><input id="requestLguEligibility" type="checkbox" required /> I confirm I am submitting
+            this request on behalf of a Local Government Unit in Lipa City.</label
+          >
+          <button class="btn btn-primary" type="submit">Submit Request</button>
+          <p
+            class="request-form-message"
+            id="requestFormMessage"
+            role="status"
+            aria-live="polite"
+          ></p>
+        </form>
+      </section>
     </main>
-    <footer class="footer"><p>© 2026 KBK Community Donation Tracking System — Transparency. Accountability. Community.</p></footer>
+    <footer class="footer">
+      <p>
+        © 2026 KBK Community Donation Tracking System — Transparency. Accountability. Community.
+      </p>
+    </footer>
     <script src="supabase-config.js"></script>
-<script src="script.js"></script>
-</body>
+    <script src="script.js"></script>
+  </body>
 </html>

@@ -67,14 +67,15 @@ function clientIp(request: Request) {
 
 async function sha256(value: string) {
   const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
-  return [...new Uint8Array(digest)].map(byte => byte.toString(16).padStart(2, "0")).join("");
+  return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
 function validContact(value: string) {
   const email = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
-  const phone = /^\+?[0-9 ().-]{7,20}$/.test(value)
-    && value.replace(/[^0-9]/g, "").length >= 7
-    && value.replace(/[^0-9]/g, "").length <= 15;
+  const phone =
+    /^\+?[0-9 ().-]{7,20}$/.test(value) &&
+    value.replace(/[^0-9]/g, "").length >= 7 &&
+    value.replace(/[^0-9]/g, "").length <= 15;
   return value.length >= 7 && value.length <= 160 && (email || phone);
 }
 
@@ -90,7 +91,15 @@ function validateSubmission(type: SubmissionType, value: unknown) {
     const assistanceType = typeof record.assistance_type === "string" ? record.assistance_type : "";
     const description = typeof record.description === "string" ? record.description.trim() : "";
     const quantity = typeof record.quantity === "string" ? record.quantity.trim() : "";
-    if (!name || record.lgu_attestation !== true || !allowedTypes.includes(assistanceType) || description.length < 10 || description.length > 1500 || quantity.length > 120) return null;
+    if (
+      !name ||
+      record.lgu_attestation !== true ||
+      !allowedTypes.includes(assistanceType) ||
+      description.length < 10 ||
+      description.length > 1500 ||
+      quantity.length > 120
+    )
+      return null;
     return {
       table: "kbk_assistance_requests",
       row: {
@@ -105,7 +114,8 @@ function validateSubmission(type: SubmissionType, value: unknown) {
 
   const subject = typeof record.subject === "string" ? record.subject.trim() : "";
   const message = typeof record.message === "string" ? record.message.trim() : "";
-  if (subject.length < 1 || subject.length > 160 || message.length < 10 || message.length > 2000) return null;
+  if (subject.length < 1 || subject.length > 160 || message.length < 10 || message.length > 2000)
+    return null;
   return {
     table: "kbk_public_feedback_messages",
     row: { requester_name: name || null, contact, subject, message },
@@ -122,16 +132,24 @@ Deno.serve(async (request) => {
 
   let payload: Record<string, unknown>;
   try {
-    payload = await readJsonWithinLimit(request, maxRequestBytes) as Record<string, unknown>;
+    payload = (await readJsonWithinLimit(request, maxRequestBytes)) as Record<string, unknown>;
   } catch (error) {
     if (error instanceof SubmissionTooLargeError) {
       return jsonResponse({ error: "Submission is too large." }, 413);
     }
     return jsonResponse({ error: "Invalid submission." }, 400);
   }
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+    return jsonResponse({ error: "Invalid submission." }, 400);
+  }
   const type = payload.type;
-  if (type !== "assistance" && type !== "feedback") return jsonResponse({ error: "Invalid submission type." }, 400);
-  if (typeof payload.token !== "string" || payload.token.length < 1 || payload.token.length > 2048) {
+  if (type !== "assistance" && type !== "feedback")
+    return jsonResponse({ error: "Invalid submission type." }, 400);
+  if (
+    typeof payload.token !== "string" ||
+    payload.token.length < 1 ||
+    payload.token.length > 2048
+  ) {
     return jsonResponse({ error: "Complete the security check and try again." }, 400);
   }
   const cleanSubmission = validateSubmission(type, payload.request);
@@ -139,7 +157,9 @@ Deno.serve(async (request) => {
 
   const turnstileSecret = Deno.env.get("TURNSTILE_SECRET_KEY");
   const allowedHosts = (Deno.env.get("KBK_TURNSTILE_HOSTNAMES") || "")
-    .split(",").map(host => host.trim().toLowerCase()).filter(Boolean);
+    .split(",")
+    .map((host) => host.trim().toLowerCase())
+    .filter(Boolean);
   const supabaseUrl = Deno.env.get("SUPABASE_URL")?.replace(/\/+$/, "");
   const supabaseKey = getSupabaseSecretKey();
   if (!turnstileSecret || !allowedHosts.length || !supabaseUrl || !supabaseKey) {
@@ -150,7 +170,10 @@ Deno.serve(async (request) => {
   const ip = clientIp(request);
   if (!ip) {
     console.error("Public submission request did not include a client IP address.");
-    return jsonResponse({ error: "Online submissions are temporarily unavailable. Please try again later." }, 503);
+    return jsonResponse(
+      { error: "Online submissions are temporarily unavailable. Please try again later." },
+      503,
+    );
   }
   let verification: { success?: boolean; hostname?: string };
   try {
@@ -168,9 +191,16 @@ Deno.serve(async (request) => {
     verification = await siteVerify.json();
   } catch (error) {
     console.error("Turnstile verification service failed.", error);
-    return jsonResponse({ error: "The security check is temporarily unavailable. Please try again." }, 503);
+    return jsonResponse(
+      { error: "The security check is temporarily unavailable. Please try again." },
+      503,
+    );
   }
-  if (!verification.success || !verification.hostname || !allowedHosts.includes(verification.hostname.toLowerCase())) {
+  if (
+    !verification.success ||
+    !verification.hostname ||
+    !allowedHosts.includes(verification.hostname.toLowerCase())
+  ) {
     return jsonResponse({ error: "Security check failed. Please complete it again." }, 400);
   }
 
@@ -187,10 +217,14 @@ Deno.serve(async (request) => {
       signal: AbortSignal.timeout(8000),
     });
     if (!limitResponse.ok) throw new Error(`Rate-limit check returned ${limitResponse.status}`);
-    if (await limitResponse.json() !== true) return jsonResponse({ error: "Too many submissions. Please try again later." }, 429);
+    if ((await limitResponse.json()) !== true)
+      return jsonResponse({ error: "Too many submissions. Please try again later." }, 429);
   } catch (error) {
     console.error("Public submission rate-limit check failed.", error);
-    return jsonResponse({ error: "Online submissions are temporarily unavailable. Please try again later." }, 503);
+    return jsonResponse(
+      { error: "Online submissions are temporarily unavailable. Please try again later." },
+      503,
+    );
   }
 
   try {
@@ -208,11 +242,17 @@ Deno.serve(async (request) => {
     });
     if (!insertResponse.ok) {
       console.error(`Inbox insert failed with status ${insertResponse.status}.`);
-      return jsonResponse({ error: "We could not save your submission. Please try again later." }, 502);
+      return jsonResponse(
+        { error: "We could not save your submission. Please try again later." },
+        502,
+      );
     }
   } catch (error) {
     console.error("Public inbox insert failed.", error);
-    return jsonResponse({ error: "We could not save your submission. Please try again later." }, 502);
+    return jsonResponse(
+      { error: "We could not save your submission. Please try again later." },
+      502,
+    );
   }
   return jsonResponse({ ok: true });
 });
